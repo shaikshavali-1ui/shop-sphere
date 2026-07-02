@@ -1,0 +1,11 @@
+{
+  "name": "shopsphere-root",
+  "version": "1.0.0",
+  "description": "ShopSphere Root - Delegation to Frontend Next.js Project",
+  "scripts": {
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "start": "npm run start --prefix frontend",
+    "lint": "npm run lint --prefix frontend"
+  }
+}
