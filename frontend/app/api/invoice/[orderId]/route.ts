@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { supabaseServer } from '@/lib/supabase/server';
-import { jsPDF } from 'jspdf';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +35,7 @@ export async function GET(
     }
 
     // 2. Generate PDF using jsPDF (A4 layout in portrait mode)
+    const { jsPDF } = await import('jspdf');
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
