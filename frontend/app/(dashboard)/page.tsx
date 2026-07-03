@@ -15,9 +15,12 @@ export default function RootRouter() {
       } else {
         // Authenticated user -> Check their role traits
         const email = session.user.email || '';
+        const userRole = session.user.user_metadata?.role || 'customer';
         
-        // If email indicates admin role (or custom logic/meta matching), go to dashboard
-        const isAdmin = email.includes('admin') || email.endsWith('@shopsphere.com');
+        // Admin if metadata role is 'admin' or email matches admin patterns
+        const isAdmin = userRole === 'admin' || 
+                        email.includes('admin') || 
+                        email.endsWith('@shopsphere.com');
         
         if (isAdmin) {
           router.push('/dashboard');
