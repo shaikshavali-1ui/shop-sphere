@@ -354,17 +354,6 @@ export default function Storefront() {
                 Sign In
               </Link>
             )}
-
-            <span className="text-slate-850">|</span>
-
-            {/* Portal Switch */}
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-1 py-2 px-3.5 bg-slate-900 border border-white/5 text-slate-400 hover:text-slate-200 rounded-lg transition-all"
-            >
-              <Shield className="h-3.5 w-3.5" />
-              Admin Portal
-            </Link>
           </div>
         </div>
       </header>
