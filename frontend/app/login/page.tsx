@@ -83,10 +83,12 @@ export default function UnifiedLogin() {
         if (error) {
           setErrorMsg(error.message);
         } else if (data.session) {
-          // Route destination based on user's actual role metadata
-          const actualRole = data.session.user.user_metadata?.role || 'customer';
+          // Route destination: Admin if selected admin in UI, has admin metadata, or email contains 'admin'
+          const isAdmin = role === 'admin' || 
+                          data.session.user.user_metadata?.role === 'admin' || 
+                          email.toLowerCase().includes('admin');
 
-          if (actualRole === 'customer') {
+          if (!isAdmin) {
             // Guarantee customer row existence in public.customers
             const { data: existingCust } = await supabase
               .from('customers')
