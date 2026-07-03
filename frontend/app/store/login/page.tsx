@@ -83,8 +83,10 @@ export default function UnifiedLogin() {
         if (error) {
           setErrorMsg(error.message);
         } else if (data.session) {
-          // Route destination based on the selected role portal
-          if (role === 'customer') {
+          // Route destination based on user's actual role metadata
+          const actualRole = data.session.user.user_metadata?.role || 'customer';
+
+          if (actualRole === 'customer') {
             // Guarantee customer row existence in public.customers
             const { data: existingCust } = await supabase
               .from('customers')
