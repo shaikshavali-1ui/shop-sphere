@@ -18,6 +18,33 @@ interface CustomerOrderDetails extends Order {
   };
 }
 
+const MOCK_CUSTOMERS: Customer[] = [
+  {
+    customer_id: 'demo-cust-1',
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    phone: '+1 555-0199',
+    address: '123 Main St, New York, NY 10001',
+    created_at: new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString()
+  },
+  {
+    customer_id: 'demo-cust-2',
+    name: 'Jane Smith',
+    email: 'jane.smith@example.com',
+    phone: '+1 555-0244',
+    address: '456 Oak Ave, Los Angeles, CA 90001',
+    created_at: new Date(Date.now() - 15 * 24 * 3600 * 1000).toISOString()
+  },
+  {
+    customer_id: 'demo-cust-3',
+    name: 'Robert Johnson',
+    email: 'robert.j@example.com',
+    phone: '+1 555-0388',
+    address: '789 Pine Rd, Chicago, IL 60601',
+    created_at: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString()
+  }
+];
+
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +56,21 @@ export default function CustomersPage() {
 
   // 1. Fetch customer list
   const fetchCustomers = useCallback(async () => {
+    if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+      setLoading(true);
+      let baseCustomers = MOCK_CUSTOMERS;
+      if (debouncedSearch) {
+        baseCustomers = baseCustomers.filter(c => 
+          (c.name || '').toLowerCase().includes(debouncedSearch.toLowerCase()) || 
+          (c.email || '').toLowerCase().includes(debouncedSearch.toLowerCase()) || 
+          (c.phone || '').toLowerCase().includes(debouncedSearch.toLowerCase())
+        );
+      }
+      setCustomers(baseCustomers);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       let query = supabase
@@ -203,6 +245,21 @@ const CustomerDrawer: React.FC<DrawerProps> = ({ customerId, onClose, onUpdate }
   const ordersPerPage = 5;
 
   const fetchCustomerDetails = useCallback(async (id: string) => {
+    if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+      setLoading(true);
+      const cust = MOCK_CUSTOMERS.find(c => c.customer_id === id);
+      setCustomer(cust || null);
+      if (cust) {
+        setEditedName(cust.name || '');
+        setEditedPhone(cust.phone || '');
+        setEditedAddress(cust.address || '');
+      }
+      setTotalOrders(2);
+      setLifetimeSpend(189.98);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       // 1. Fetch customer demographic data
@@ -243,6 +300,19 @@ const CustomerDrawer: React.FC<DrawerProps> = ({ customerId, onClose, onUpdate }
     e.preventDefault();
     if (!customer) return;
     setUpdating(true);
+    
+    if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+      setCustomer({
+        ...customer,
+        name: editedName,
+        phone: editedPhone,
+        address: editedAddress
+      });
+      setIsEditing(false);
+      setUpdating(false);
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('customers')
@@ -274,6 +344,40 @@ const CustomerDrawer: React.FC<DrawerProps> = ({ customerId, onClose, onUpdate }
 
   // Fetch paginated customer orders
   const fetchCustomerOrders = useCallback(async (id: string, currentPage: number, clearPrevious = false) => {
+    if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+      setLoadingOrders(true);
+      const demoOrders: CustomerOrderDetails[] = [
+        {
+          order_id: 'demo-ord-1',
+          customer_id: id,
+          product_id: 'demo-prod-electronics-1',
+          quantity: 1,
+          total_amount: 59.99,
+          status: 'Pending',
+          order_date: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+          products: {
+            name: 'Wireless Gaming Mouse'
+          }
+        },
+        {
+          order_id: 'demo-ord-2',
+          customer_id: id,
+          product_id: 'demo-prod-electronics-2',
+          quantity: 1,
+          total_amount: 129.99,
+          status: 'Delivered',
+          order_date: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString(),
+          products: {
+            name: 'Mechanical Keyboard Pro'
+          }
+        }
+      ];
+      setOrders(demoOrders);
+      setHasMore(false);
+      setLoadingOrders(false);
+      return;
+    }
+
     setLoadingOrders(true);
     try {
       const from = currentPage * ordersPerPage;

@@ -25,6 +25,7 @@ const STATUS_STAGES: Order['status'][] = ['Pending', 'Packed', 'Shipped', 'Deliv
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<OrderWithRelations[]>([]);
+  const [allOrders, setAllOrders] = useState<OrderWithRelations[]>([]); // Demo Mode full orders
   const [loading, setLoading] = useState(true);
 
   // Status transition states
@@ -52,6 +53,55 @@ export default function OrdersPage() {
 
   // 1. Fetch Orders from Supabase
   const fetchOrders = useCallback(async () => {
+    if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+      setLoading(true);
+      let baseOrders = allOrders;
+      if (baseOrders.length === 0) {
+        baseOrders = [
+          {
+            order_id: 'demo-ord-1',
+            customer_id: 'demo-cust-1',
+            product_id: 'demo-prod-electronics-1',
+            quantity: 1,
+            total_amount: 59.99,
+            status: 'Pending',
+            order_date: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+            customers: {
+              name: 'John Doe',
+              email: 'john.doe@example.com'
+            },
+            products: {
+              name: 'Wireless Gaming Mouse',
+              stock: 14,
+              price: 59.99
+            }
+          },
+          {
+            order_id: 'demo-ord-2',
+            customer_id: 'demo-cust-2',
+            product_id: 'demo-prod-electronics-2',
+            quantity: 1,
+            total_amount: 129.99,
+            status: 'Delivered',
+            order_date: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString(),
+            customers: {
+              name: 'Jane Smith',
+              email: 'jane.smith@example.com'
+            },
+            products: {
+              name: 'Mechanical Keyboard Pro',
+              stock: 7,
+              price: 129.99
+            }
+          }
+        ];
+        setAllOrders(baseOrders);
+      }
+      setOrders(baseOrders);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -78,7 +128,7 @@ export default function OrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [allOrders]);
 
   useEffect(() => {
     fetchOrders();
@@ -133,6 +183,11 @@ export default function OrdersPage() {
     // A. Check for stock availability before marking as "Shipped" or "Delivered"
     if ((targetStatus === 'Shipped' || targetStatus === 'Delivered') && currentStatus !== 'Shipped' && currentStatus !== 'Delivered') {
       try {
+        if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+          executeUpdateStatus(orderId, targetStatus, currentStatus, productId, quantity);
+          return;
+        }
+
         const { data: product, error } = await supabase
           .from('products')
           .select('name, stock')
@@ -183,6 +238,27 @@ export default function OrdersPage() {
     quantity: number
   ) => {
     setLoading(true);
+
+    if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+      const updated = allOrders.map(ord => {
+        if (ord.order_id === orderId) {
+          return {
+            ...ord,
+            status: targetStatus
+          };
+        }
+        return ord;
+      });
+      setAllOrders(updated);
+      setOrders(updated);
+      setSuccessMsg(`Order updated to status: ${targetStatus}`);
+      setLoading(false);
+      setActiveTransition(null);
+      setStockAlert(null);
+      setSequenceAlert(null);
+      return;
+    }
+
     try {
       // 1. If transitioning to "Shipped" or "Delivered" from a state where stock wasn't decremented, decrement stock
       if ((targetStatus === 'Shipped' || targetStatus === 'Delivered') && 

@@ -43,6 +43,43 @@ export default function DashboardPage() {
   }, []);
 
   const fetchMetrics = useCallback(async () => {
+    if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+      setLoading(true);
+      
+      const orderCount = 2;
+      const revSum = 189.98;
+
+      setTotalOrders(orderCount);
+      setRevenue(revSum);
+
+      setCatalogSize(1200);
+
+      const mockLowStock: Product[] = [
+        {
+          product_id: 'demo-prod-electronics-2',
+          name: 'Mechanical Keyboard Pro',
+          price: 129.99,
+          category: 'Electronics',
+          stock: 3,
+          status: 'Active',
+          image_url: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80',
+          created_at: new Date().toISOString()
+        }
+      ];
+
+      setLowStockCount(mockLowStock.length);
+      setLowStockProducts(mockLowStock);
+
+      const mockOrders = [
+        { total_amount: 59.99, order_date: new Date(Date.now() - 2 * 3600 * 1000).toISOString() },
+        { total_amount: 129.99, order_date: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString() }
+      ];
+
+      compileChartData(mockOrders, chartRange);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       // 1. Fetch Orders details to compute Revenue & Order count
