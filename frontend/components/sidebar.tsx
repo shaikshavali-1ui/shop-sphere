@@ -19,6 +19,7 @@ export const Sidebar: React.FC = () => {
 
   const handleLogout = async () => {
     try {
+      localStorage.removeItem('shopsphere_demo_session');
       await supabase.auth.signOut();
       router.push('/login');
       router.refresh();

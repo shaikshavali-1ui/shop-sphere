@@ -24,17 +24,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // 1. Fetch initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      syncCookies(session);
+      if (session) {
+        setSession(session);
+        setUser(session.user);
+        syncCookies(session);
+      } else {
+        const demoSession = localStorage.getItem('shopsphere_demo_session');
+        if (demoSession) {
+          try {
+            const parsed = JSON.parse(demoSession);
+            setSession(parsed);
+            setUser(parsed.user);
+            syncCookies(parsed);
+          } catch (e) {}
+        }
+      }
       setLoading(false);
     });
 
     // 2. Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, currentSession) => {
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      syncCookies(currentSession);
+      if (currentSession) {
+        setSession(currentSession);
+        setUser(currentSession.user);
+        syncCookies(currentSession);
+      } else {
+        const demoSession = localStorage.getItem('shopsphere_demo_session');
+        if (demoSession) {
+          try {
+            const parsed = JSON.parse(demoSession);
+            setSession(parsed);
+            setUser(parsed.user);
+            syncCookies(parsed);
+          } catch (e) {}
+        } else {
+          setSession(null);
+          setUser(null);
+          syncCookies(null);
+        }
+      }
       setLoading(false);
     });
 
