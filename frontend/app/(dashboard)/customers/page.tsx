@@ -60,9 +60,13 @@ export default function CustomersPage() {
                            !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
     if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
       setLoading(true);
-      let baseCustomers = MOCK_CUSTOMERS;
+      const cached = localStorage.getItem('shopsphere_mock_customers');
+      let baseCustomers = cached ? JSON.parse(cached) : MOCK_CUSTOMERS;
+      if (!cached) {
+        localStorage.setItem('shopsphere_mock_customers', JSON.stringify(baseCustomers));
+      }
       if (debouncedSearch) {
-        baseCustomers = baseCustomers.filter(c => 
+        baseCustomers = baseCustomers.filter((c: any) => 
           (c.name || '').toLowerCase().includes(debouncedSearch.toLowerCase()) || 
           (c.email || '').toLowerCase().includes(debouncedSearch.toLowerCase()) || 
           (c.phone || '').toLowerCase().includes(debouncedSearch.toLowerCase())
@@ -251,15 +255,21 @@ const CustomerDrawer: React.FC<DrawerProps> = ({ customerId, onClose, onUpdate }
                            !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
     if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
       setLoading(true);
-      const cust = MOCK_CUSTOMERS.find(c => c.customer_id === id);
+      const cached = localStorage.getItem('shopsphere_mock_customers');
+      const custsList = cached ? JSON.parse(cached) : MOCK_CUSTOMERS;
+      const cust = custsList.find((c: any) => c.customer_id === id);
       setCustomer(cust || null);
       if (cust) {
         setEditedName(cust.name || '');
         setEditedPhone(cust.phone || '');
         setEditedAddress(cust.address || '');
       }
-      setTotalOrders(2);
-      setLifetimeSpend(189.98);
+      const cachedOrders = localStorage.getItem('shopsphere_mock_orders');
+      const ordersList = cachedOrders ? JSON.parse(cachedOrders) : [];
+      const customerOrdersList = ordersList.filter((o: any) => o.customer_id === id);
+      const spend = customerOrdersList.reduce((acc: number, curr: any) => acc + Number(curr.total_amount), 0);
+      setTotalOrders(customerOrdersList.length);
+      setLifetimeSpend(parseFloat(spend.toFixed(2)));
       setLoading(false);
       return;
     }
@@ -308,14 +318,26 @@ const CustomerDrawer: React.FC<DrawerProps> = ({ customerId, onClose, onUpdate }
     const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
                            !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
     if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
-      setCustomer({
+      const updatedCust = {
         ...customer,
         name: editedName,
         phone: editedPhone,
         address: editedAddress
-      });
+      };
+      setCustomer(updatedCust);
+
+      const cached = localStorage.getItem('shopsphere_mock_customers');
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          const updatedList = parsed.map((c: any) => c.customer_id === customer.customer_id ? updatedCust : c);
+          localStorage.setItem('shopsphere_mock_customers', JSON.stringify(updatedList));
+        } catch (e) {}
+      }
+
       setIsEditing(false);
       setUpdating(false);
+      if (onUpdate) onUpdate();
       return;
     }
 
@@ -354,33 +376,10 @@ const CustomerDrawer: React.FC<DrawerProps> = ({ customerId, onClose, onUpdate }
                            !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
     if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
       setLoadingOrders(true);
-      const demoOrders: CustomerOrderDetails[] = [
-        {
-          order_id: 'demo-ord-1',
-          customer_id: id,
-          product_id: 'demo-prod-electronics-1',
-          quantity: 1,
-          total_amount: 59.99,
-          status: 'Pending',
-          order_date: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-          products: {
-            name: 'Wireless Gaming Mouse'
-          }
-        },
-        {
-          order_id: 'demo-ord-2',
-          customer_id: id,
-          product_id: 'demo-prod-electronics-2',
-          quantity: 1,
-          total_amount: 129.99,
-          status: 'Delivered',
-          order_date: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString(),
-          products: {
-            name: 'Mechanical Keyboard Pro'
-          }
-        }
-      ];
-      setOrders(demoOrders);
+      const cached = localStorage.getItem('shopsphere_mock_orders');
+      const ordersList = cached ? JSON.parse(cached) : [];
+      const customerOrdersList = ordersList.filter((o: any) => o.customer_id === id);
+      setOrders(customerOrdersList);
       setHasMore(false);
       setLoadingOrders(false);
       return;

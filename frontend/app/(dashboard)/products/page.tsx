@@ -215,11 +215,12 @@ export default function ProductsPage() {
     if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
       setLoading(true);
       setErrorMsg(null);
-      let baseProducts = allProducts;
-      if (baseProducts.length === 0) {
-        baseProducts = generateMockProducts();
-        setAllProducts(baseProducts);
+      const cached = localStorage.getItem('shopsphere_mock_products');
+      let baseProducts: Product[] = cached ? JSON.parse(cached) : generateMockProducts();
+      if (!cached) {
+        localStorage.setItem('shopsphere_mock_products', JSON.stringify(baseProducts));
       }
+      setAllProducts(baseProducts);
       let filtered = [...baseProducts];
       if (debouncedSearch) {
         filtered = filtered.filter(p => p.name.toLowerCase().includes(debouncedSearch.toLowerCase()));
@@ -436,6 +437,7 @@ export default function ProductsPage() {
         }
 
         setAllProducts(updatedAllProducts);
+        localStorage.setItem('shopsphere_mock_products', JSON.stringify(updatedAllProducts));
         // Trigger a local state filter update
         let filtered = [...updatedAllProducts];
         if (debouncedSearch) {
@@ -494,6 +496,7 @@ export default function ProductsPage() {
     if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
       const updatedAllProducts = allProducts.filter(p => p.product_id !== id);
       setAllProducts(updatedAllProducts);
+      localStorage.setItem('shopsphere_mock_products', JSON.stringify(updatedAllProducts));
 
       let filtered = [...updatedAllProducts];
       if (debouncedSearch) {

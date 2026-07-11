@@ -46,13 +46,13 @@ export default function UnifiedLogin() {
 
   const triggerDemoSession = async (targetEmail: string, targetRole: 'admin' | 'customer') => {
     const dummyUser = {
-      id: targetRole === 'admin' ? '00000000-0000-0000-0000-000000000001' : '00000000-0000-0000-0000-000000000002',
+      id: targetRole === 'admin' ? '00000000-0000-0000-0000-000000000001' : `demo-cust-${Date.now()}`,
       email: targetEmail,
       user_metadata: { role: targetRole, name: targetRole === 'admin' ? 'Demo Admin' : targetEmail.split('@')[0] }
     };
     const dummySession = {
       access_token: 'demo-token',
-      refresh_token: 'demo-refresh-token',
+      token_type: 'bearer',
       expires_in: 3600,
       user: dummyUser
     };
@@ -61,6 +61,26 @@ export default function UnifiedLogin() {
     const secureFlag = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : '';
     document.cookie = `sb-access-token=demo-token; path=/; max-age=3600; SameSite=Lax${secureFlag}`;
     document.cookie = `sb-refresh-token=demo-refresh-token; path=/; max-age=604800; SameSite=Lax${secureFlag}`;
+
+    if (targetRole === 'customer') {
+      const mockCustsStr = localStorage.getItem('shopsphere_mock_customers');
+      if (mockCustsStr) {
+        try {
+          const parsed = JSON.parse(mockCustsStr);
+          if (!parsed.some((c: any) => c.email.toLowerCase() === targetEmail.toLowerCase())) {
+            parsed.push({
+              customer_id: dummyUser.id,
+              name: dummyUser.user_metadata.name,
+              email: targetEmail,
+              phone: '+1 555-0100',
+              address: 'Demo Address St, NY',
+              created_at: new Date().toISOString()
+            });
+            localStorage.setItem('shopsphere_mock_customers', JSON.stringify(parsed));
+          }
+        } catch (e) {}
+      }
+    }
 
     if (targetRole === 'admin') {
       router.push('/');

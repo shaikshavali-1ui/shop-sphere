@@ -22,6 +22,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    import('@/lib/mock-data').then(m => m.initializeMockDataInLocalStorage());
+
+    const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+    
+    if (!isDbConfigured) {
+      const demoSession = localStorage.getItem('shopsphere_demo_session');
+      if (demoSession) {
+        try {
+          const parsed = JSON.parse(demoSession);
+          setSession(parsed);
+          setUser(parsed.user);
+          syncCookies(parsed);
+        } catch (e) {}
+      } else {
+        setSession(null);
+        setUser(null);
+        syncCookies(null);
+      }
+      setLoading(false);
+      return;
+    }
+
     // 1. Fetch initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {

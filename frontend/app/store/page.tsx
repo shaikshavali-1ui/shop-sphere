@@ -486,6 +486,26 @@ export default function Storefront() {
 
   // Fetch active products
   const fetchStoreProducts = useCallback(async () => {
+    const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+    const isDemo = customerSession?.access_token === 'demo-token';
+
+    if (isDemo || !isDbConfigured) {
+      setLoading(true);
+      const cached = localStorage.getItem('shopsphere_mock_products');
+      let base = cached ? JSON.parse(cached) : MOCK_PRODUCTS;
+      base = base.filter((p: any) => p.status === 'Active');
+      if (selectedCategory) {
+        base = base.filter((p: any) => p.category.toLowerCase().includes(selectedCategory.split(',')[0].trim().toLowerCase()));
+      }
+      if (debouncedSearch) {
+        base = base.filter((p: any) => p.name.toLowerCase().includes(debouncedSearch.toLowerCase()));
+      }
+      setProducts(base);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       let query = supabase
@@ -513,18 +533,20 @@ export default function Storefront() {
     } catch (err) {
       console.error('Error fetching storefront products:', err);
       // Fallback to beautiful mock products on database/connection failure so user never gets a blank catalog
-      let filtered = [...MOCK_PRODUCTS];
+      const cached = localStorage.getItem('shopsphere_mock_products');
+      let filtered = cached ? JSON.parse(cached) : MOCK_PRODUCTS;
+      filtered = filtered.filter((p: any) => p.status === 'Active');
       if (selectedCategory) {
-        filtered = filtered.filter(p => p.category.toLowerCase().includes(selectedCategory.split(',')[0].trim().toLowerCase()));
+        filtered = filtered.filter((p: any) => p.category.toLowerCase().includes(selectedCategory.split(',')[0].trim().toLowerCase()));
       }
       if (debouncedSearch) {
-        filtered = filtered.filter(p => p.name.toLowerCase().includes(debouncedSearch.toLowerCase()));
+        filtered = filtered.filter((p: any) => p.name.toLowerCase().includes(debouncedSearch.toLowerCase()));
       }
       setProducts(filtered);
     } finally {
       setLoading(false);
     }
-  }, [debouncedSearch, selectedCategory]);
+  }, [debouncedSearch, selectedCategory, customerSession]);
 
   useEffect(() => {
     fetchStoreProducts();
@@ -533,41 +555,17 @@ export default function Storefront() {
   const fetchCustomerOrders = async () => {
     if (!customerSession) return;
 
-    if (customerSession.access_token === 'demo-token') {
+    const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+    const isDemo = customerSession.access_token === 'demo-token';
+
+    if (isDemo || !isDbConfigured) {
       setIsOrdersLoading(true);
       setTimeout(() => {
-        if (customerOrders.length === 0) {
-          setCustomerOrders([
-            {
-              order_id: 'demo-order-1',
-              order_date: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
-              quantity: 2,
-              status: 'Delivered',
-              total_amount: 119.98,
-              product_id: 'demo-prod-1',
-              products: {
-                name: 'Wireless Gaming Mouse',
-                image_url: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80',
-                price: 59.99,
-                category: 'Electronics'
-              }
-            },
-            {
-              order_id: 'demo-order-2',
-              order_date: new Date().toISOString(),
-              quantity: 1,
-              status: 'Pending',
-              total_amount: 129.99,
-              product_id: 'demo-prod-2',
-              products: {
-                name: 'Mechanical Keyboard Pro',
-                image_url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&q=80',
-                price: 129.99,
-                category: 'Electronics'
-              }
-            }
-          ]);
-        }
+        const cached = localStorage.getItem('shopsphere_mock_orders');
+        let orders = cached ? JSON.parse(cached) : [];
+        orders = orders.filter((o: any) => o.customer_id === customerSession.user.id);
+        setCustomerOrders(orders);
         setIsOrdersLoading(false);
       }, 400);
       return;
@@ -773,7 +771,11 @@ export default function Storefront() {
 
     if (cart.length === 0) return;
 
-    if (customerSession?.access_token === 'demo-token') {
+    const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+    const isDemo = customerSession?.access_token === 'demo-token';
+
+    if (isDemo || !isDbConfigured) {
       setIsCheckoutLoading(true);
       setErrorMsg(null);
       setTimeout(() => {
@@ -795,19 +797,56 @@ export default function Storefront() {
 
         // 2. Prepend new orders to order history state
         const newOrders = cart.map((item, index) => ({
-          order_id: `demo-order-${Date.now()}-${index}`,
+          order_id: `demo-ord-${Date.now()}-${index}`,
           order_date: new Date().toISOString(),
           quantity: item.quantity,
           status: 'Pending' as const,
           total_amount: item.product.price * item.quantity,
           product_id: item.product.product_id,
+          customer_id: customerSession.user.id,
+          customers: {
+            name: customerSession.user.user_metadata?.name || customerSession.user.email?.split('@')[0],
+            email: customerSession.user.email
+          },
           products: {
             name: item.product.name,
             image_url: item.product.image_url,
             price: item.product.price,
-            category: item.product.category
+            category: item.product.category,
+            stock: Math.max(0, item.product.stock - item.quantity)
           }
         }));
+
+        // Write to localStorage mock products
+        const existingProductsStr = localStorage.getItem('shopsphere_mock_products');
+        if (existingProductsStr) {
+          try {
+            const existingProducts = JSON.parse(existingProductsStr);
+            const updatedProducts = existingProducts.map((p: any) => {
+              const cartItem = cart.find(item => item.product.product_id === p.product_id);
+              if (cartItem) {
+                const newStock = Math.max(0, p.stock - cartItem.quantity);
+                return {
+                  ...p,
+                  stock: newStock,
+                  status: newStock === 0 ? 'Out of Stock' : p.status
+                };
+              }
+              return p;
+            });
+            localStorage.setItem('shopsphere_mock_products', JSON.stringify(updatedProducts));
+          } catch (e) {}
+        }
+
+        // Write to localStorage mock orders
+        const existingOrdersStr = localStorage.getItem('shopsphere_mock_orders');
+        if (existingOrdersStr) {
+          try {
+            const existingOrders = JSON.parse(existingOrdersStr);
+            localStorage.setItem('shopsphere_mock_orders', JSON.stringify([...newOrders, ...existingOrders]));
+          } catch (e) {}
+        }
+
         setCustomerOrders(prevOrders => [...newOrders, ...prevOrders]);
 
         setSuccessMsg('Thank you! Your order has been placed successfully (Demo Mode).');
@@ -905,7 +944,11 @@ export default function Storefront() {
 
     if (quantity <= 0) return;
 
-    if (customerSession?.access_token === 'demo-token') {
+    const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+    const isDemo = customerSession?.access_token === 'demo-token';
+
+    if (isDemo || !isDbConfigured) {
       setIsCheckoutLoading(true);
       setErrorMsg(null);
       setTimeout(() => {
@@ -926,21 +969,57 @@ export default function Storefront() {
 
         // 2. Prepend new order to order history state
         const finalDB = (product.price * quantity) + 0.09 + (paymentMethod === 'cod' ? 0.06 : 0) - (applyGiftCard ? Math.min((product.price * quantity) + 0.09, 0.54) : 0);
-        const newOrder = {
-          order_id: `demo-order-${Date.now()}`,
+        const finalOrder = {
+          order_id: `demo-ord-${Date.now()}`,
           order_date: new Date().toISOString(),
           quantity: quantity,
           status: 'Pending' as const,
           total_amount: parseFloat(finalDB.toFixed(2)),
           product_id: product.product_id,
+          customer_id: customerSession.user.id,
+          customers: {
+            name: customerSession.user.user_metadata?.name || customerSession.user.email?.split('@')[0],
+            email: customerSession.user.email
+          },
           products: {
             name: product.name,
             image_url: product.image_url,
             price: product.price,
-            category: product.category
+            category: product.category,
+            stock: Math.max(0, product.stock - quantity)
           }
         };
-        setCustomerOrders(prevOrders => [newOrder, ...prevOrders]);
+
+        // Write to localStorage mock products
+        const existingProductsStr = localStorage.getItem('shopsphere_mock_products');
+        if (existingProductsStr) {
+          try {
+            const existingProducts = JSON.parse(existingProductsStr);
+            const updatedProducts = existingProducts.map((p: any) => {
+              if (p.product_id === product.product_id) {
+                const newStock = Math.max(0, p.stock - quantity);
+                return {
+                  ...p,
+                  stock: newStock,
+                  status: newStock === 0 ? 'Out of Stock' : p.status
+                };
+              }
+              return p;
+            });
+            localStorage.setItem('shopsphere_mock_products', JSON.stringify(updatedProducts));
+          } catch (e) {}
+        }
+
+        // Write to localStorage mock orders
+        const existingOrdersStr = localStorage.getItem('shopsphere_mock_orders');
+        if (existingOrdersStr) {
+          try {
+            const existingOrders = JSON.parse(existingOrdersStr);
+            localStorage.setItem('shopsphere_mock_orders', JSON.stringify([finalOrder, ...existingOrders]));
+          } catch (e) {}
+        }
+
+        setCustomerOrders(prevOrders => [finalOrder, ...prevOrders]);
 
         setSuccessMsg(`Thank you! Your order for "${product.name}" has been placed successfully via ${paymentMethod.toUpperCase()} (Demo Mode). A confirmation email has been sent to ${customerSession.user.email}.`);
         setCheckoutProduct(null);

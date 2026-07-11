@@ -57,48 +57,49 @@ export default function OrdersPage() {
                            !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
     if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
       setLoading(true);
-      let baseOrders = allOrders;
-      if (baseOrders.length === 0) {
-        baseOrders = [
-          {
-            order_id: 'demo-ord-1',
-            customer_id: 'demo-cust-1',
-            product_id: 'demo-prod-electronics-1',
-            quantity: 1,
-            total_amount: 59.99,
-            status: 'Pending',
-            order_date: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
-            customers: {
-              name: 'John Doe',
-              email: 'john.doe@example.com'
-            },
-            products: {
-              name: 'Wireless Gaming Mouse',
-              stock: 14,
-              price: 59.99
-            }
+      const cached = localStorage.getItem('shopsphere_mock_orders');
+      let baseOrders = cached ? JSON.parse(cached) : [
+        {
+          order_id: 'demo-ord-1',
+          customer_id: '00000000-0000-0000-0000-000000000002',
+          product_id: 'demo-prod-electronics-1',
+          quantity: 1,
+          total_amount: 59.99,
+          status: 'Pending',
+          order_date: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+          customers: {
+            name: 'Demo Customer',
+            email: 'customer@example.com'
           },
-          {
-            order_id: 'demo-ord-2',
-            customer_id: 'demo-cust-2',
-            product_id: 'demo-prod-electronics-2',
-            quantity: 1,
-            total_amount: 129.99,
-            status: 'Delivered',
-            order_date: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString(),
-            customers: {
-              name: 'Jane Smith',
-              email: 'jane.smith@example.com'
-            },
-            products: {
-              name: 'Mechanical Keyboard Pro',
-              stock: 7,
-              price: 129.99
-            }
+          products: {
+            name: 'Wireless Gaming Mouse',
+            stock: 14,
+            price: 59.99
           }
-        ];
-        setAllOrders(baseOrders);
+        },
+        {
+          order_id: 'demo-ord-2',
+          customer_id: 'demo-cust-2',
+          product_id: 'demo-prod-electronics-2',
+          quantity: 1,
+          total_amount: 129.99,
+          status: 'Delivered',
+          order_date: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString(),
+          customers: {
+            name: 'Jane Smith',
+            email: 'jane.smith@example.com'
+          },
+          products: {
+            name: 'Mechanical Keyboard Pro',
+            stock: 7,
+            price: 129.99
+          }
+        }
+      ];
+      if (!cached) {
+        localStorage.setItem('shopsphere_mock_orders', JSON.stringify(baseOrders));
       }
+      setAllOrders(baseOrders);
       setOrders(baseOrders);
       setLoading(false);
       return;
@@ -255,6 +256,7 @@ export default function OrdersPage() {
         }
         return ord;
       });
+      localStorage.setItem('shopsphere_mock_orders', JSON.stringify(updated));
       setAllOrders(updated);
       setOrders(updated);
       setSuccessMsg(`Order updated to status: ${targetStatus}`);
