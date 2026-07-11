@@ -254,18 +254,18 @@ export default function OrdersPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 flex items-center gap-3">
-            <ShoppingCart className="h-8 w-8 text-indigo-500" />
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-800 flex items-center gap-3">
+            <ShoppingCart className="h-8 w-8 text-blue-600" />
             Fulfillment Orders
           </h1>
-          <p className="text-slate-400 text-sm">
+          <p className="text-slate-500 text-sm">
             Monitor incoming client orders, progress shipping cycles, and export PDF invoice receipts.
           </p>
         </div>
 
         <button
           onClick={fetchOrders}
-          className="p-2.5 bg-slate-900/40 border border-white/5 rounded-lg text-slate-400 hover:text-slate-200 transition-colors"
+          className="p-2.5 bg-white border border-slate-200 rounded-lg text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-colors cursor-pointer"
           title="Refresh List"
         >
           <RefreshCw className="h-4 w-4" />
@@ -273,23 +273,23 @@ export default function OrdersPage() {
       </div>
 
       {/* Orders Registry Console */}
-      <div className="glass-panel overflow-hidden border border-white/5">
+      <div className="glass-panel overflow-hidden border border-slate-200 bg-white shadow-sm">
         {loading && orders.length === 0 ? (
-          <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+          <div className="py-20 flex flex-col items-center justify-center text-slate-500 gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-605" />
             <span>Loading database transactions...</span>
           </div>
         ) : orders.length === 0 ? (
-          <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-2">
-            <ClipboardList className="h-10 w-10 text-slate-600 mb-2" />
-            <span className="font-semibold text-slate-300">No Orders Registered</span>
-            <span className="text-xs">Once users purchase items, transactions will appear here.</span>
+          <div className="py-20 flex flex-col items-center justify-center text-slate-500 gap-2">
+            <ClipboardList className="h-10 w-10 text-slate-400 mb-2" />
+            <span className="font-semibold text-slate-700">No Orders Registered</span>
+            <span className="text-xs text-slate-450">Once users purchase items, transactions will appear here.</span>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-white/5 bg-slate-900/30 text-slate-300 text-xs font-semibold uppercase tracking-wider">
+                <tr className="border-b border-slate-200 bg-slate-50 text-slate-600 text-xs font-black uppercase tracking-wider">
                   <th className="py-4 px-6">Order ID</th>
                   <th className="py-4 px-6">Customer</th>
                   <th className="py-4 px-6">Product Details</th>
@@ -300,35 +300,35 @@ export default function OrdersPage() {
                   <th className="py-4 px-6 text-right">Invoices</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5 text-sm text-slate-300">
+              <tbody className="divide-y divide-slate-100 text-sm text-slate-650">
                 {orders.map((order) => {
                   let badgeColor = '';
-                  if (order.status === 'Pending') badgeColor = 'border-amber-500/20 bg-amber-500/5 text-amber-400';
-                  else if (order.status === 'Packed') badgeColor = 'border-indigo-500/20 bg-indigo-500/5 text-indigo-400';
-                  else if (order.status === 'Shipped') badgeColor = 'border-sky-500/20 bg-sky-500/5 text-sky-400';
-                  else badgeColor = 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400';
+                  if (order.status === 'Pending') badgeColor = 'border-amber-205 bg-amber-50 text-amber-700';
+                  else if (order.status === 'Packed') badgeColor = 'border-blue-200 bg-blue-50 text-blue-700';
+                  else if (order.status === 'Shipped') badgeColor = 'border-sky-200 bg-sky-50 text-sky-700';
+                  else badgeColor = 'border-emerald-200 bg-emerald-50 text-emerald-700';
 
                   return (
-                    <tr key={order.order_id} className="hover:bg-white/5 transition-colors">
-                      <td className="py-4 px-6 font-mono text-xs font-bold text-indigo-400">
+                    <tr key={order.order_id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-100 last:border-0">
+                      <td className="py-4 px-6 font-mono text-xs font-bold text-blue-600">
                         #{order.order_id.substring(0, 8).toUpperCase()}
                       </td>
                       <td className="py-4 px-6">
                         <div className="flex flex-col">
-                          <span className="font-semibold text-slate-100">{order.customers?.name || 'Deleted Account'}</span>
-                          <span className="text-[10px] text-slate-500">{order.customers?.email}</span>
+                          <span className="font-bold text-slate-800">{order.customers?.name || 'Deleted Account'}</span>
+                          <span className="text-[10px] text-slate-500 font-medium">{order.customers?.email}</span>
                         </div>
                       </td>
-                      <td className="py-4 px-6 font-semibold text-slate-200">
-                        {order.products?.name || <span className="text-slate-600 italic">Deleted Product</span>}
+                      <td className="py-4 px-6 font-bold text-slate-800">
+                        {order.products?.name || <span className="text-slate-400 italic">Deleted Product</span>}
                       </td>
-                      <td className="py-4 px-6 font-mono text-center font-semibold">
+                      <td className="py-4 px-6 font-mono text-center font-bold">
                         {order.quantity}
                       </td>
-                      <td className="py-4 px-6 font-mono font-bold text-slate-100">
-                        ${Number(order.total_amount).toFixed(2)}
+                      <td className="py-4 px-6 font-mono font-black text-slate-900">
+                        ₹{Math.round(Number(order.total_amount) * 100).toLocaleString('en-IN')}
                       </td>
-                      <td className="py-4 px-6 font-mono text-xs text-slate-400">
+                      <td className="py-4 px-6 font-mono text-xs text-slate-500">
                         {new Date(order.order_date).toLocaleDateString(undefined, {
                           year: 'numeric',
                           month: 'short',
@@ -339,23 +339,23 @@ export default function OrdersPage() {
                         {/* Dropdown status changer styled cleanly */}
                         <div className="relative inline-block w-32">
                           <select
-                            className={`w-full bg-slate-950/60 border rounded-lg py-1.5 pl-3 pr-8 text-xs font-bold outline-none cursor-pointer appearance-none transition-all duration-200 ${badgeColor}`}
+                            className={`w-full bg-white border rounded-lg py-1.5 pl-3 pr-8 text-xs font-bold outline-none cursor-pointer appearance-none transition-all duration-200 ${badgeColor}`}
                             value={order.status}
                             onChange={(e) => handleStatusChangeAttempt(
-                              order.order_id,
-                              e.target.value as Order['status'],
-                              order.status,
-                              order.product_id,
-                              order.quantity
-                            )}
+                                order.order_id,
+                                e.target.value as Order['status'],
+                                order.status,
+                                order.product_id,
+                                order.quantity
+                              )}
                           >
                             {STATUS_STAGES.map(stage => (
-                              <option key={stage} value={stage} className="bg-slate-950 text-slate-250 font-bold">
+                              <option key={stage} value={stage} className="bg-white text-slate-800 font-bold">
                                 {stage}
                               </option>
-                            ))}
+                              ))}
                           </select>
-                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-550">
                             <ArrowRight className="h-3 w-3 rotate-90" />
                           </div>
                         </div>
@@ -363,7 +363,7 @@ export default function OrdersPage() {
                       <td className="py-4 px-6 text-right">
                         <Link
                           href={`/api/invoice/${order.order_id}`}
-                          className="inline-flex items-center gap-1.5 py-1.5 px-3 bg-slate-800 hover:bg-slate-700 hover:text-white border border-slate-700/50 text-slate-300 text-xs font-semibold rounded-lg transition-colors"
+                          className="inline-flex items-center gap-1.5 py-1.5 px-3 bg-slate-100 hover:bg-slate-200 hover:text-slate-900 border border-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                           title="Download Invoice PDF"
                         >
                           <Download className="h-3.5 w-3.5" />
@@ -381,27 +381,27 @@ export default function OrdersPage() {
 
       {/* CRITICAL STOCK ALARM DIALOG */}
       {stockAlert && activeTransition && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="glass-panel w-full max-w-md p-6 text-center border border-rose-500/25 bg-rose-950/5 relative">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 text-center border border-slate-200 relative shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex justify-center mb-4">
-              <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-full glow-rose animate-bounce">
+              <div className="p-3 bg-rose-50 border border-rose-100 text-rose-605 rounded-full animate-bounce">
                 <AlertTriangle className="h-6 w-6" />
               </div>
             </div>
 
-            <h3 className="text-lg font-bold text-rose-400 mb-2">Insufficient Stock Alarm</h3>
-            <p className="text-slate-300 text-sm leading-relaxed mb-4">
+            <h3 className="text-lg font-bold text-rose-700 mb-2">Insufficient Stock Alarm</h3>
+            <p className="text-slate-600 text-sm leading-relaxed mb-4">
               Cannot ship this order! The product **{stockAlert.productName}** does not have enough stock.
             </p>
 
-            <div className="bg-slate-950/50 border border-white/5 rounded-lg p-4 text-xs text-left mb-6 space-y-1.5 font-mono">
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 text-xs text-left mb-6 space-y-1.5 font-mono">
               <div className="flex justify-between">
-                <span className="text-slate-500">Required Quantity:</span>
-                <span className="text-slate-200 font-bold">{stockAlert.required}</span>
+                <span className="text-slate-450">Required Quantity:</span>
+                <span className="text-slate-800 font-bold">{stockAlert.required}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-500">Available Stock:</span>
-                <span className="text-rose-400 font-bold">{stockAlert.available}</span>
+                <span className="text-slate-450">Available Stock:</span>
+                <span className="text-rose-600 font-bold">{stockAlert.available}</span>
               </div>
             </div>
 
@@ -411,7 +411,7 @@ export default function OrdersPage() {
                   setStockAlert(null);
                   setActiveTransition(null);
                 }}
-                className="py-2 px-5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition-colors border border-slate-700/50"
+                className="py-2 px-5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors border border-slate-200 cursor-pointer"
               >
                 Close / Replenish Stock
               </button>
@@ -422,16 +422,16 @@ export default function OrdersPage() {
 
       {/* SEQUENCE DEVIATION WARNING DIALOG */}
       {sequenceAlert && activeTransition && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="glass-panel w-full max-w-md p-6 text-center border border-amber-500/20 bg-slate-900 relative">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 text-center border border-slate-200 relative shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex justify-center mb-4">
-              <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-full glow-amber">
+              <div className="p-3 bg-amber-50 border border-amber-100 text-amber-600 rounded-full">
                 <AlertTriangle className="h-6 w-6" />
               </div>
             </div>
 
-            <h3 className="text-lg font-bold text-slate-100 mb-2">Fulfillment Sequence Override</h3>
-            <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Fulfillment Sequence Override</h3>
+            <p className="text-slate-500 text-sm mb-6 leading-relaxed">
               {sequenceAlert.message}
             </p>
 
@@ -441,19 +441,19 @@ export default function OrdersPage() {
                   setSequenceAlert(null);
                   setActiveTransition(null);
                 }}
-                className="py-2 px-5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition-colors border border-slate-700/50"
+                className="py-2 px-5 bg-slate-105 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors border border-slate-200 cursor-pointer animate-in fade-in duration-100"
               >
                 Cancel Override
               </button>
               <button
                 onClick={() => executeUpdateStatus(
-                  activeTransition.orderId,
-                  activeTransition.targetStatus,
-                  activeTransition.currentStatus,
-                  activeTransition.productId,
-                  activeTransition.quantity
-                )}
-                className="py-2 px-5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-md shadow-amber-600/10"
+                    activeTransition.orderId,
+                    activeTransition.targetStatus,
+                    activeTransition.currentStatus,
+                    activeTransition.productId,
+                    activeTransition.quantity
+                  )}
+                className="py-2 px-5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-md shadow-amber-600/10 cursor-pointer"
               >
                 Confirm Override
               </button>

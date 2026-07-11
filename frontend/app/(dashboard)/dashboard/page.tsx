@@ -128,11 +128,11 @@ export default function DashboardPage() {
     <div className="space-y-8">
       {/* Title block */}
       <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 flex items-center gap-3">
-          <TrendingUp className="h-8 w-8 text-indigo-500" />
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-800 flex items-center gap-3">
+          <TrendingUp className="h-8 w-8 text-blue-605" />
           Dashboard Analytics
         </h1>
-        <p className="text-slate-400 text-sm">
+        <p className="text-slate-550 text-sm">
           Real-time insights on sales performance, stock status levels, and predictive forecasts.
         </p>
       </div>
@@ -142,43 +142,47 @@ export default function DashboardPage() {
         {[
           { 
             title: 'Gross Revenue', 
-            value: `$${revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 
+            value: `₹${Math.round(revenue * 100).toLocaleString('en-IN')}`, 
             icon: TrendingUp, 
-            color: 'text-emerald-400 border-emerald-500/20 bg-emerald-500/5 glow-emerald' 
+            textColor: 'text-slate-850',
+            iconColor: 'text-emerald-600 bg-emerald-50 border-emerald-100',
           },
           { 
             title: 'Total Placed Orders', 
             value: totalOrders.toString(), 
             icon: ShoppingCart, 
-            color: 'text-indigo-400 border-indigo-500/20 bg-indigo-500/5 glow-indigo' 
+            textColor: 'text-slate-850',
+            iconColor: 'text-blue-650 bg-blue-50 border-blue-100',
           },
           { 
             title: 'Product Catalog Size', 
             value: `${catalogSize} Items`, 
             icon: Package, 
-            color: 'text-sky-400 border-sky-500/20 bg-sky-500/5' 
+            textColor: 'text-slate-850',
+            iconColor: 'text-indigo-600 bg-indigo-50 border-indigo-100',
           },
           { 
             title: 'Low Stock Alarms', 
             value: lowStockCount.toString(), 
             icon: AlertTriangle, 
-            color: lowStockCount > 0 
-              ? 'text-rose-400 border-rose-500/20 bg-rose-500/5 glow-rose' 
-              : 'text-slate-400 border-white/5 bg-slate-900/30' 
+            textColor: lowStockCount > 0 ? 'text-rose-700' : 'text-slate-850',
+            iconColor: lowStockCount > 0 
+              ? 'text-rose-600 bg-rose-50 border-rose-100' 
+              : 'text-slate-450 bg-slate-50 border-slate-100',
           },
         ].map((kpi, idx) => {
           const Icon = kpi.icon;
           return (
-            <div key={idx} className={`glass-panel p-6 flex items-center justify-between border ${kpi.color}`}>
+            <div key={idx} className="glass-panel p-6 flex items-center justify-between border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow">
               <div className="space-y-1">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">
+                <span className="text-[10px] text-slate-450 font-black uppercase tracking-wider block">
                   {kpi.title}
                 </span>
-                <span className="text-2xl font-black tracking-tight text-slate-100">
+                <span className={`text-2xl font-black tracking-tight ${kpi.textColor}`}>
                   {kpi.value}
                 </span>
               </div>
-              <div className="p-3 bg-white/5 rounded-xl border border-white/5">
+              <div className={`p-3 rounded-xl border ${kpi.iconColor}`}>
                 <Icon className="h-5 w-5" />
               </div>
             </div>
@@ -189,15 +193,15 @@ export default function DashboardPage() {
       {/* Analytics Chart & Alerts grids */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Sales Chart Panel */}
-        <div className="glass-panel p-6 border border-white/5 lg:col-span-2 flex flex-col justify-between space-y-4">
+        <div className="glass-panel p-6 border border-slate-200 bg-white shadow-sm lg:col-span-2 flex flex-col justify-between space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex flex-col gap-0.5">
-              <h3 className="text-sm font-bold text-slate-200">Sales Trend Curve</h3>
+              <h3 className="text-sm font-bold text-slate-805">Sales Trend Curve</h3>
               <span className="text-xs text-slate-500">Gross revenue earnings performance logs.</span>
             </div>
 
             {/* Time Toggle controls */}
-            <div className="bg-slate-950/60 p-1 border border-white/5 rounded-lg flex gap-1">
+            <div className="bg-slate-100 p-1 border border-slate-200 rounded-lg flex gap-1">
               {[
                 { label: '7D', value: '7d' },
                 { label: '30D', value: '30d' },
@@ -206,10 +210,10 @@ export default function DashboardPage() {
                 <button
                   key={btn.value}
                   onClick={() => setChartRange(btn.value as any)}
-                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors ${
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
                     chartRange === btn.value
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? 'bg-blue-650 text-white shadow-sm'
+                      : 'text-slate-655 hover:text-slate-800'
                   }`}
                 >
                   {btn.label}
@@ -233,34 +237,34 @@ export default function DashboardPage() {
                       <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(0,0,0,0.05)" />
                   <XAxis 
                     dataKey="date" 
-                    stroke="rgba(255,255,255,0.3)" 
+                    stroke="#94a3b8" 
                     fontSize={10} 
                     tickLine={false}
                   />
                   <YAxis 
-                    stroke="rgba(255,255,255,0.3)" 
+                    stroke="#94a3b8" 
                     fontSize={10} 
                     tickLine={false}
-                    tickFormatter={(v) => `$${v}`}
+                    tickFormatter={(v) => `₹${Math.round(v * 100).toLocaleString('en-IN')}`}
                   />
                   <Tooltip 
                     contentStyle={{ 
-                      backgroundColor: '#0f172a', 
-                      borderColor: 'rgba(255,255,255,0.08)',
+                      backgroundColor: '#ffffff', 
+                      borderColor: '#e2e8f0',
                       borderRadius: '8px',
-                      color: '#f8fafc',
+                      color: '#1e293b',
                       fontSize: '11px',
-                      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
                     }}
-                    formatter={(value: number) => [`$${value.toFixed(2)}`, 'Revenue']}
+                    formatter={(value: number) => [`₹${Math.round(value * 100).toLocaleString('en-IN')}`, 'Revenue']}
                   />
                   <Area 
                     type="monotone" 
                     dataKey="revenue" 
-                    stroke="#6366f1" 
+                    stroke="#2563eb" 
                     strokeWidth={2}
                     fillOpacity={1} 
                     fill="url(#colorRevenue)" 
@@ -272,21 +276,21 @@ export default function DashboardPage() {
         </div>
 
         {/* Low Stock alerts panel */}
-        <div className="glass-panel p-6 border border-white/5 flex flex-col justify-between space-y-4">
+        <div className="glass-panel p-6 border border-slate-200 bg-white shadow-sm flex flex-col justify-between space-y-4">
           <div className="flex flex-col gap-0.5">
-            <h3 className="text-sm font-bold text-slate-200">Critical Stock Alarms</h3>
+            <h3 className="text-sm font-bold text-slate-805">Critical Stock Alarms</h3>
             <span className="text-xs text-slate-500">Inventory counts drop below safety levels.</span>
           </div>
 
           <div className="flex-1 flex flex-col justify-center">
             {loading ? (
               <div className="flex justify-center py-10">
-                <Loader2 className="h-5 w-5 animate-spin text-indigo-500" />
+                <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
               </div>
             ) : lowStockProducts.length === 0 ? (
               <div className="text-center py-10 flex flex-col items-center gap-1.5 text-slate-500">
                 <CheckCircle className="h-8 w-8 text-emerald-500/20" />
-                <span className="text-xs font-semibold text-slate-350">Inventory is healthy</span>
+                <span className="text-xs font-semibold text-slate-650">Inventory is healthy</span>
                 <span className="text-[10px]">No items at or below 5 stock units.</span>
               </div>
             ) : (
@@ -294,24 +298,24 @@ export default function DashboardPage() {
                 {lowStockProducts.map(prod => (
                   <div 
                     key={prod.product_id}
-                    className="flex items-center justify-between p-3 bg-slate-950/30 border border-white/5 hover:border-white/10 rounded-lg transition-all"
+                    className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-lg transition-all"
                   >
                     <div className="space-y-0.5 text-left">
-                      <span className="text-xs font-semibold text-slate-200 block truncate max-w-[150px]">
+                      <span className="text-xs font-semibold text-slate-800 block truncate max-w-[150px]">
                         {prod.name}
                       </span>
-                      <span className="text-[9px] text-slate-500 uppercase font-mono">
+                      <span className="text-[9px] text-slate-550 uppercase font-mono">
                         {prod.category}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className="text-xs font-mono font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded">
+                      <span className="text-xs font-mono font-bold text-rose-700 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded">
                         {prod.stock} left
                       </span>
                       <Link
                         href={`/products?edit=${prod.product_id}`}
-                        className="p-1 hover:bg-indigo-500/10 border border-transparent hover:border-indigo-500/20 text-indigo-400 rounded-md transition-all"
+                        className="p-1 hover:bg-blue-50 border border-transparent hover:border-blue-105 text-blue-600 rounded-md transition-all"
                         title="Edit Stock"
                       >
                         <ChevronRight className="h-4.5 w-4.5" />
@@ -323,10 +327,10 @@ export default function DashboardPage() {
             )}
           </div>
 
-          <div className="pt-2 border-t border-white/5 text-right">
+          <div className="pt-2 border-t border-slate-100 text-right">
             <Link 
               href="/products" 
-              className="text-xs text-indigo-400 hover:text-indigo-300 font-bold inline-flex items-center gap-1 hover:underline"
+              className="text-xs text-blue-600 hover:text-blue-800 font-bold inline-flex items-center gap-1 hover:underline"
             >
               Manage Catalog
               <ArrowRight className="h-3.5 w-3.5" />
@@ -336,34 +340,34 @@ export default function DashboardPage() {
       </div>
 
       {/* AI Forecasting */}
-      <div className="glass-panel p-6 border border-white/5 relative overflow-hidden bg-indigo-950/5">
+      <div className="glass-panel p-6 border border-slate-200 bg-white shadow-sm relative overflow-hidden">
         <div className="absolute top-0 right-0 p-4 opacity-5">
-          <Sparkles className="h-24 w-24 text-indigo-500" />
+          <Sparkles className="h-24 w-24 text-blue-500" />
         </div>
 
         <div className="flex items-start gap-4">
-          <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 glow-indigo mt-1 shrink-0">
+          <div className="p-3 bg-blue-50 border border-blue-105 rounded-xl text-blue-600 mt-1 shrink-0">
             <Sparkles className="h-5 w-5" />
           </div>
 
           <div className="space-y-4 text-left w-full">
             <div className="flex flex-col gap-0.5">
-              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+              <h3 className="text-sm font-bold text-slate-805 flex items-center gap-2">
                 AI Stock Depletion Forecasting
-                <span className="text-[8px] bg-indigo-500/20 text-indigo-300 px-1.5 py-0.5 rounded uppercase tracking-wider font-extrabold">
+                <span className="text-[8px] bg-blue-100 text-blue-750 px-1.5 py-0.5 rounded uppercase tracking-wider font-extrabold">
                   Beta Engine
                 </span>
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500">
                 Predictive analytics mapping stock depletion thresholds based on daily transaction velocities.
               </p>
             </div>
 
             {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+              <Loader2 className="h-4 w-4 animate-spin text-blue-605" />
             ) : lowStockProducts.length === 0 ? (
-              <div className="bg-slate-950/40 border border-white/5 rounded-lg p-3 text-xs text-slate-400 flex items-center gap-2">
-                <Info className="h-4 w-4 text-slate-500 shrink-0" />
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs text-slate-500 flex items-center gap-2">
+                <Info className="h-4 w-4 text-slate-400 shrink-0" />
                 <span>Forecasting index matches zero critical alarms. Ensure catalog contains low stock values to run simulation.</span>
               </div>
             ) : (
@@ -376,10 +380,10 @@ export default function DashboardPage() {
                   return (
                     <div 
                       key={prod.product_id}
-                      className="bg-slate-950/50 border border-white/5 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                      className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                     >
                       <div className="space-y-1">
-                        <span className="text-xs font-bold text-slate-200 block truncate max-w-[180px]">
+                        <span className="text-xs font-bold text-slate-800 block truncate max-w-[180px]">
                           {prod.name}
                         </span>
                         <div className="text-[10px] text-slate-500 flex items-center gap-2">
@@ -391,11 +395,11 @@ export default function DashboardPage() {
 
                       <div className="shrink-0 text-right">
                         {isOutOfStock ? (
-                          <span className="text-xs font-bold text-rose-400 bg-rose-500/10 border border-rose-500/20 px-2 py-1 rounded block">
+                          <span className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-100 px-2 py-1 rounded block">
                             Out of Stock
                           </span>
                         ) : (
-                          <span className="text-xs font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded block">
+                          <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-1 rounded block">
                             Depletes in {daysToDepletion} days
                           </span>
                         )}

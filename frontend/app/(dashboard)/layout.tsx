@@ -16,8 +16,8 @@ export default function DashboardLayout({
   // Show a loading screen while Supabase session is resolving on initial load
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-slate-400 gap-4">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#f1f3f6] text-slate-600 gap-4">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
         <span className="text-sm font-medium tracking-wide">Syncing Admin Session...</span>
       </div>
     );
@@ -29,7 +29,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-[#f1f3f6] text-slate-800">
       <Sidebar />
       <div className="flex-1 flex flex-col min-h-screen">
         <Navbar />

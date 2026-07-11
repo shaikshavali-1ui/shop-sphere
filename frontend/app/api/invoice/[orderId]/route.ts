@@ -108,14 +108,21 @@ export async function GET(
     doc.text('AMOUNT', 170, 105);
 
     // Table Content (since single product per order in standard schema)
-    const productPrice = Number(order.total_amount) / order.quantity;
+    // Convert database USD value to Indian Rupees (INR)
+    const totalAmountINR = Math.round(Number(order.total_amount) * 100);
+    const unitPriceINR = Math.round((Number(order.total_amount) / order.quantity) * 100);
+    
+    // Subtotal and tax calculations such that they add up to the exact grand total paid
+    const subtotalINR = Math.round(totalAmountINR / 1.05);
+    const taxINR = totalAmountINR - subtotalINR;
+
     doc.setTextColor(30, 41, 59); // Slate 800
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.text(order.products?.name || 'Product Details', 23, 115);
     doc.text(order.quantity.toString(), 120, 115);
-    doc.text(`$${productPrice.toFixed(2)}`, 140, 115);
-    doc.text(`$${Number(order.total_amount).toFixed(2)}`, 170, 115);
+    doc.text(`Rs. ${unitPriceINR.toLocaleString('en-IN')}`, 140, 115);
+    doc.text(`Rs. ${totalAmountINR.toLocaleString('en-IN')}`, 170, 115);
 
     // Divider
     doc.setDrawColor(226, 232, 240); // Slate 200
@@ -125,18 +132,16 @@ export async function GET(
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
     doc.text('Subtotal:', 130, 132);
-    doc.text(`$${Number(order.total_amount).toFixed(2)}`, 170, 132);
+    doc.text(`Rs. ${subtotalINR.toLocaleString('en-IN')}`, 170, 132);
 
-    doc.text('Tax (5%):', 130, 138);
-    const tax = Number(order.total_amount) * 0.05;
-    doc.text(`$${tax.toFixed(2)}`, 170, 138);
+    doc.text('Tax (5% GST):', 130, 138);
+    doc.text(`Rs. ${taxINR.toLocaleString('en-IN')}`, 170, 138);
 
     // Grand total row
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.text('GRAND TOTAL:', 130, 146);
-    const grandTotal = Number(order.total_amount) + tax;
-    doc.text(`$${grandTotal.toFixed(2)}`, 170, 146);
+    doc.text(`Rs. ${totalAmountINR.toLocaleString('en-IN')}`, 170, 146);
 
     // Footer lines
     doc.setFont('helvetica', 'italic');

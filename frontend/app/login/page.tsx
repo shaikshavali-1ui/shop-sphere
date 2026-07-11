@@ -83,10 +83,8 @@ export default function UnifiedLogin() {
         if (error) {
           setErrorMsg(error.message);
         } else if (data.session) {
-          // Route destination: Admin if selected admin in UI, has admin metadata, or email contains 'admin'
-          const isAdmin = role === 'admin' || 
-                          data.session.user.user_metadata?.role === 'admin' || 
-                          email.toLowerCase().includes('admin');
+          // Route destination: Strictly check Supabase user_metadata role attribute set by DB Administrator
+          const isAdmin = data.session.user.user_metadata?.role === 'admin';
 
           if (!isAdmin) {
             // Guarantee customer row existence in public.customers
@@ -120,27 +118,27 @@ export default function UnifiedLogin() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 bg-slate-950">
-      <div className="w-full max-w-md bg-slate-900 border border-slate-800/80 shadow-2xl rounded-2xl p-8 text-center space-y-6">
+    <main className="min-h-screen flex items-center justify-center p-4 bg-[#f1f3f6]">
+      <div className="w-full max-w-md bg-white border border-slate-200 shadow-2xl rounded-2xl p-8 text-center space-y-6">
         
         {/* Changing header icons based on active dropdown selection */}
         <div className="flex justify-center">
           {role === 'admin' ? (
-            <div className="p-3 bg-indigo-600/10 border border-indigo-500/20 rounded-2xl text-indigo-400 transition-colors">
+            <div className="p-3 bg-blue-50 border border-blue-100 rounded-2xl text-blue-650 transition-colors">
               <Layers className="h-8 w-8" />
             </div>
           ) : (
-            <div className="p-3 bg-emerald-600/10 border border-emerald-500/20 rounded-2xl text-emerald-400 transition-colors">
+            <div className="p-3 bg-emerald-55/10 border border-emerald-100 rounded-2xl text-emerald-600 transition-colors">
               <ShoppingBag className="h-8 w-8" />
             </div>
           )}
         </div>
 
         <div className="space-y-1.5">
-          <h1 className="text-2xl font-black text-slate-100 tracking-tight">
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">
             ShopSphere {isSignUp ? 'Sign Up' : 'Gate'}
           </h1>
-          <p className="text-slate-400 text-xs">
+          <p className="text-slate-500 text-xs font-medium">
             {isSignUp 
               ? 'Create a new account to access the platform' 
               : role === 'admin' 
@@ -164,20 +162,20 @@ export default function UnifiedLogin() {
         />
 
         {errorMsg && (
-          <div className="flex items-start gap-3 bg-rose-500/10 border border-rose-500/20 text-rose-450 p-3.5 rounded-lg text-left text-xs leading-relaxed animate-pulse">
+          <div className="flex items-start gap-3 bg-rose-50 border border-rose-100 text-rose-700 p-3.5 rounded-lg text-left text-xs leading-relaxed animate-pulse">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
             <div>
-              <span className="font-semibold block mb-0.5">Authentication Failed</span>
+              <span className="font-bold block mb-0.5">Authentication Failed</span>
               {errorMsg}
             </div>
           </div>
         )}
 
         {successMsg && (
-          <div className="flex items-start gap-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-3.5 rounded-lg text-left text-xs leading-relaxed">
+          <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-100 text-emerald-600 p-3.5 rounded-lg text-left text-xs leading-relaxed">
             <CheckCircle className="h-4 w-4 shrink-0 mt-0.5" />
             <div>
-              <span className="font-semibold block mb-0.5">Success</span>
+              <span className="font-bold block mb-0.5">Success</span>
               {successMsg}
             </div>
           </div>
@@ -226,8 +224,8 @@ export default function UnifiedLogin() {
             type="submit"
             className={`w-full py-2.5 mt-2 transition-colors ${
               role === 'admin' 
-                ? 'bg-indigo-600 hover:bg-indigo-500 border-indigo-500/20' 
-                : 'bg-emerald-600 hover:bg-emerald-500 border-emerald-500/20'
+                ? 'bg-blue-600 hover:bg-blue-700 border-blue-500/20 shadow-sm' 
+                : 'bg-emerald-600 hover:bg-emerald-500 border-emerald-500/20 shadow-sm'
             }`}
             disabled={loading}
           >
@@ -243,7 +241,7 @@ export default function UnifiedLogin() {
               setErrorMsg(null);
               setSuccessMsg(null);
             }}
-            className="text-xs text-slate-400 hover:text-slate-200 underline underline-offset-4 transition-colors"
+            className="text-xs text-slate-500 hover:text-slate-800 underline underline-offset-4 transition-colors cursor-pointer"
           >
             {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
           </button>

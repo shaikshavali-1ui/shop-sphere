@@ -121,7 +121,7 @@ export default function ProductsPage() {
     if (mode === 'edit' && product) {
       setCurrentProduct(product);
       setName(product.name);
-      setPrice(product.price.toString());
+      setPrice(Math.round(product.price * 100).toString());
       setStock(product.stock.toString());
       setCategory(product.category);
       setStatus(product.status);
@@ -226,7 +226,7 @@ export default function ProductsPage() {
 
       const payload = {
         name,
-        price: parsedPrice,
+        price: parsedPrice / 100, // Store inside DB in standard USD scale
         stock: parsedStock,
         category,
         status: resolvedStatus,
@@ -306,11 +306,11 @@ export default function ProductsPage() {
       {/* Header bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-100 flex items-center gap-3">
-            <ShoppingBag className="h-8 w-8 text-indigo-500" />
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-800 flex items-center gap-3">
+            <ShoppingBag className="h-8 w-8 text-blue-600" />
             Products Catalog
           </h1>
-          <p className="text-slate-400 text-sm">
+          <p className="text-slate-505 text-sm">
             Manage product inventory details, categories, pricing, and stock levels.
           </p>
         </div>
@@ -333,7 +333,7 @@ export default function ProductsPage() {
           </span>
           <input
             type="text"
-            className="w-full bg-slate-900/40 border border-white/5 rounded-lg py-2.5 pl-10 pr-4 text-slate-100 text-sm outline-none transition-all duration-200 focus:border-indigo-500/30 focus:ring-1 focus:ring-indigo-500/10"
+            className="w-full bg-white border border-slate-200 rounded-lg py-2.5 pl-10 pr-4 text-slate-800 text-sm outline-none transition-all duration-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20"
             placeholder="Search by product name..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -354,23 +354,23 @@ export default function ProductsPage() {
       </div>
 
       {/* Products Table grid */}
-      <div className="glass-panel overflow-hidden border border-white/5">
+      <div className="glass-panel overflow-hidden border border-slate-200 bg-white shadow-sm">
         {loading && products.length === 0 ? (
-          <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+          <div className="py-20 flex flex-col items-center justify-center text-slate-500 gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-605" />
             <span>Fetching catalog items...</span>
           </div>
         ) : products.length === 0 ? (
-          <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-2">
-            <ShoppingBag className="h-10 w-10 text-slate-600 mb-2" />
-            <span className="font-semibold text-slate-300">No Products Found</span>
-            <span className="text-xs">Try adjusting search filters or add a new product.</span>
+          <div className="py-20 flex flex-col items-center justify-center text-slate-500 gap-2">
+            <ShoppingBag className="h-10 w-10 text-slate-400 mb-2" />
+            <span className="font-semibold text-slate-700">No Products Found</span>
+            <span className="text-xs text-slate-450">Try adjusting search filters or add a new product.</span>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-white/5 bg-slate-900/30 text-slate-300 text-xs font-semibold uppercase tracking-wider">
+                <tr className="border-b border-slate-200 bg-slate-50 text-slate-600 text-xs font-black uppercase tracking-wider">
                   <th className="py-4 px-6">Image</th>
                   <th className="py-4 px-6">Name</th>
                   <th className="py-4 px-6">Price</th>
@@ -380,7 +380,7 @@ export default function ProductsPage() {
                   <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5 text-sm text-slate-300">
+              <tbody className="divide-y divide-slate-100 text-sm text-slate-650">
                 {products.map((product) => {
                   let statusStyles = '';
                   if (product.status === 'Active') {
@@ -392,26 +392,26 @@ export default function ProductsPage() {
                   }
 
                   return (
-                    <tr key={product.product_id} className="hover:bg-white/5 transition-colors">
+                    <tr key={product.product_id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-100 last:border-0">
                       <td className="py-4 px-6 shrink-0">
                         {product.image_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img 
                             src={product.image_url} 
                             alt={product.name} 
-                            className="h-10 w-10 object-cover rounded-lg border border-white/5 bg-slate-900"
+                            className="h-10 w-10 object-cover rounded-lg border border-slate-200 bg-slate-50"
                           />
                         ) : (
-                          <div className="h-10 w-10 bg-slate-900 border border-white/5 rounded-lg flex items-center justify-center text-slate-500">
+                          <div className="h-10 w-10 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-center text-slate-400">
                             <ImageIcon className="h-4.5 w-4.5" />
                           </div>
                         )}
                       </td>
-                      <td className="py-4 px-6 font-semibold text-slate-100">
+                      <td className="py-4 px-6 font-bold text-slate-800">
                         {product.name}
                       </td>
-                      <td className="py-4 px-6 font-mono font-medium">
-                        ${product.price.toFixed(2)}
+                      <td className="py-4 px-6 font-mono font-bold text-slate-805">
+                        ₹{Math.round(product.price * 100).toLocaleString('en-IN')}
                       </td>
                       <td className="py-4 px-6">
                         {product.category}
@@ -451,17 +451,17 @@ export default function ProductsPage() {
 
       {/* CRUD Add/Edit Form Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="glass-panel w-full max-w-lg p-6 relative border border-white/10 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-lg p-6 relative border border-slate-200 max-h-[90vh] overflow-y-auto shadow-2xl animate-in zoom-in-95 duration-200">
             <button 
               onClick={closeModal}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition-colors"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-850 p-1.5 hover:bg-slate-100 rounded-full transition-colors cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>
 
-            <h2 className="text-xl font-bold text-slate-100 mb-6 flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5 text-indigo-500" />
+            <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+              <ShoppingBag className="h-5 w-5 text-blue-600" />
               {modalMode === 'add' ? 'Add New Product' : 'Edit Product Details'}
             </h2>
 
@@ -478,12 +478,12 @@ export default function ProductsPage() {
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   id="prod-price"
-                  label="Price ($)"
+                  label="Price (₹)"
                   type="number"
-                  step="0.01"
+                  step="1"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  placeholder="29.99"
+                  placeholder="2999"
                   required
                 />
 
@@ -523,14 +523,14 @@ export default function ProductsPage() {
 
               {/* Image upload widget */}
               <div className="space-y-2 text-left">
-                <label className="text-xs font-semibold text-slate-300 tracking-wide uppercase">
+                <label className="text-xs font-bold text-slate-600 tracking-wide uppercase">
                   Product Image
                 </label>
 
                 {/* Upload selectors */}
                 <div className="grid grid-cols-1 gap-3">
-                  <div className="flex items-center gap-4 bg-slate-950/40 border border-white/5 rounded-lg p-3">
-                    <label className="cursor-pointer flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/50 py-1.5 px-3 rounded text-xs transition-colors shrink-0">
+                  <div className="flex items-center gap-4 bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    <label className="cursor-pointer flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 py-1.5 px-3 rounded text-xs transition-colors shrink-0">
                       <Upload className="h-3.5 w-3.5" />
                       Choose File
                       <input 
@@ -540,12 +540,12 @@ export default function ProductsPage() {
                         onChange={handleImageFileChange}
                       />
                     </label>
-                    <span className="text-xs text-slate-400 truncate">
+                    <span className="text-xs text-slate-500 truncate">
                       {imageFile ? imageFile.name : 'No file selected (Optional)'}
                     </span>
                   </div>
 
-                  <div className="text-center text-xs text-slate-500 font-medium">
+                  <div className="text-center text-xs text-slate-450 font-bold">
                     — OR PASTE IMAGE URL —
                   </div>
 
@@ -562,7 +562,7 @@ export default function ProductsPage() {
                 </div>
               </div>
 
-              <div className="flex gap-3 justify-end pt-4 border-t border-white/5">
+              <div className="flex gap-3 justify-end pt-4 border-t border-slate-100">
                 <Button 
                   type="button" 
                   variant="secondary" 
@@ -587,16 +587,16 @@ export default function ProductsPage() {
 
       {/* Delete Product Confirmation Warning Modal */}
       {deleteProductId && (
-        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="glass-panel w-full max-w-md p-6 text-center border border-rose-500/20 bg-rose-950/5 relative">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 text-center border border-slate-200 relative shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex justify-center mb-4">
-              <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-full glow-rose">
+              <div className="p-3 bg-rose-50 border border-rose-100 text-rose-600 rounded-full">
                 <AlertTriangle className="h-6 w-6" />
               </div>
             </div>
 
-            <h3 className="text-lg font-bold text-slate-100 mb-2">Delete Product</h3>
-            <p className="text-slate-400 text-sm mb-6 leading-relaxed">
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Delete Product</h3>
+            <p className="text-slate-500 text-sm mb-6 leading-relaxed">
               Are you sure you want to delete this product from the catalog? This operation cannot be undone.
             </p>
 
