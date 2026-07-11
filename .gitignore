@@ -1,4 +1,5 @@
 # Next.js Build Output
+.next/
 frontend/.next/
 frontend/out/
 
