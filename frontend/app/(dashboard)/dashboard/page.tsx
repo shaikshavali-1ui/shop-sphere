@@ -43,7 +43,9 @@ export default function DashboardPage() {
   }, []);
 
   const fetchMetrics = useCallback(async () => {
-    if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+    const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+    if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
       setLoading(true);
       
       const orderCount = 2;

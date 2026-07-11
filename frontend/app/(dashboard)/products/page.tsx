@@ -210,7 +210,9 @@ export default function ProductsPage() {
 
   // 1. Fetch products & compile distinct categories list
   const fetchProducts = useCallback(async () => {
-    if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+    const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+    if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
       setLoading(true);
       setErrorMsg(null);
       let baseProducts = allProducts;
@@ -410,7 +412,9 @@ export default function ProductsPage() {
       // Check stock logic to auto-toggle status
       const resolvedStatus = parsedStock === 0 ? 'Out of Stock' : status;
 
-      if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+      const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                             !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+      if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
         const payload = {
           product_id: modalMode === 'add' ? `demo-prod-${Date.now()}` : currentProduct!.product_id!,
           name,
@@ -485,7 +489,9 @@ export default function ProductsPage() {
     setDeleteProductId(null);
     setLoading(true);
 
-    if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+    const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+    if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
       const updatedAllProducts = allProducts.filter(p => p.product_id !== id);
       setAllProducts(updatedAllProducts);
 

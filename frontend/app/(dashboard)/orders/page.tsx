@@ -53,7 +53,9 @@ export default function OrdersPage() {
 
   // 1. Fetch Orders from Supabase
   const fetchOrders = useCallback(async () => {
-    if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+    const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+    if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
       setLoading(true);
       let baseOrders = allOrders;
       if (baseOrders.length === 0) {
@@ -183,7 +185,9 @@ export default function OrdersPage() {
     // A. Check for stock availability before marking as "Shipped" or "Delivered"
     if ((targetStatus === 'Shipped' || targetStatus === 'Delivered') && currentStatus !== 'Shipped' && currentStatus !== 'Delivered') {
       try {
-        if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+        const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                               !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+        if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
           executeUpdateStatus(orderId, targetStatus, currentStatus, productId, quantity);
           return;
         }
@@ -239,7 +243,9 @@ export default function OrdersPage() {
   ) => {
     setLoading(true);
 
-    if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+    const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+    if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
       const updated = allOrders.map(ord => {
         if (ord.order_id === orderId) {
           return {

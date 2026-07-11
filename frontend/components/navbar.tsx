@@ -20,6 +20,22 @@ export const Navbar: React.FC = () => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchNotifications = async () => {
+    const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+    
+    if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
+      setNotifications([
+        {
+          id: 'stock-demo-1',
+          type: 'stock',
+          title: 'Inventory Alert',
+          message: 'Mechanical Keyboard Pro is running low (Stock: 3)',
+          time: 'Low Stock'
+        }
+      ]);
+      return;
+    }
+
     try {
       // 1. Fetch low stock products (<= 5 units remaining, excluding Draft products)
       const { data: lowStockProds } = await supabase

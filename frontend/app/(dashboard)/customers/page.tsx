@@ -56,7 +56,9 @@ export default function CustomersPage() {
 
   // 1. Fetch customer list
   const fetchCustomers = useCallback(async () => {
-    if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+    const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+    if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
       setLoading(true);
       let baseCustomers = MOCK_CUSTOMERS;
       if (debouncedSearch) {
@@ -245,7 +247,9 @@ const CustomerDrawer: React.FC<DrawerProps> = ({ customerId, onClose, onUpdate }
   const ordersPerPage = 5;
 
   const fetchCustomerDetails = useCallback(async (id: string) => {
-    if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+    const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+    if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
       setLoading(true);
       const cust = MOCK_CUSTOMERS.find(c => c.customer_id === id);
       setCustomer(cust || null);
@@ -301,7 +305,9 @@ const CustomerDrawer: React.FC<DrawerProps> = ({ customerId, onClose, onUpdate }
     if (!customer) return;
     setUpdating(true);
     
-    if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+    const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+    if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
       setCustomer({
         ...customer,
         name: editedName,
@@ -344,7 +350,9 @@ const CustomerDrawer: React.FC<DrawerProps> = ({ customerId, onClose, onUpdate }
 
   // Fetch paginated customer orders
   const fetchCustomerOrders = useCallback(async (id: string, currentPage: number, clearPrevious = false) => {
-    if (typeof window !== 'undefined' && localStorage.getItem('shopsphere_demo_session')) {
+    const isDbConfigured = process.env.NEXT_PUBLIC_SUPABASE_URL && 
+                           !process.env.NEXT_PUBLIC_SUPABASE_URL.includes('dummy-project-id');
+    if (typeof window !== 'undefined' && (localStorage.getItem('shopsphere_demo_session') || !isDbConfigured)) {
       setLoadingOrders(true);
       const demoOrders: CustomerOrderDetails[] = [
         {
