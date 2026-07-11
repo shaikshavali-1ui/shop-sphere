@@ -24,7 +24,8 @@ export interface Order {
   customer_id: string;
   product_id: string;
   quantity: number;
-  status: 'Pending' | 'Packed' | 'Shipped' | 'Delivered';
+  status: 'Pending' | 'Packed' | 'Shipped' | 'Delivered' | 'Cancelled' | 'Return Requested' | 'Returned';
   total_amount: number;
   order_date: string;
+  return_reason?: string;
 }

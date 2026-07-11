@@ -21,7 +21,7 @@ interface OrderWithRelations extends Order {
   } | null;
 }
 
-const STATUS_STAGES: Order['status'][] = ['Pending', 'Packed', 'Shipped', 'Delivered'];
+const STATUS_STAGES: Order['status'][] = ['Pending', 'Packed', 'Shipped', 'Delivered', 'Cancelled', 'Returned'];
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<OrderWithRelations[]>([]);
@@ -113,6 +113,12 @@ export default function OrdersPage() {
     // If no change, return
     if (targetStatus === currentStatus) return;
 
+    // If target status is Cancelled, Return Requested, or Returned, skip sequence checking
+    if (targetStatus === 'Cancelled' || targetStatus === 'Return Requested' || targetStatus === 'Returned') {
+      executeUpdateStatus(orderId, targetStatus, currentStatus, productId, quantity);
+      return;
+    }
+
     const currentIndex = STATUS_STAGES.indexOf(currentStatus);
     const targetIndex = STATUS_STAGES.indexOf(targetStatus);
 
@@ -178,8 +184,9 @@ export default function OrdersPage() {
   ) => {
     setLoading(true);
     try {
-      // 1. If transitioning to "Shipped" from a non-shipped state, decrement stock in database
-      if ((targetStatus === 'Shipped' || targetStatus === 'Delivered') && currentStatus !== 'Shipped' && currentStatus !== 'Delivered') {
+      // 1. If transitioning to "Shipped" or "Delivered" from a state where stock wasn't decremented, decrement stock
+      if ((targetStatus === 'Shipped' || targetStatus === 'Delivered') && 
+          (currentStatus !== 'Shipped' && currentStatus !== 'Delivered' && currentStatus !== 'Return Requested')) {
         const { data: product } = await supabase
           .from('products')
           .select('stock')
@@ -195,22 +202,23 @@ export default function OrdersPage() {
         }
       }
 
-      // 2. If reversing from "Shipped"/"Delivered" back to "Pending"/"Packed", restore product stock
-      if (currentStatus === 'Shipped' || currentStatus === 'Delivered') {
-        if (targetStatus === 'Pending' || targetStatus === 'Packed') {
-          const { data: product } = await supabase
+      // 2. If transitioning to a stock-restored status (Pending/Packed/Cancelled/Returned) from a decremented status (Shipped/Delivered/Return Requested), restore stock
+      const isStockRestoringTarget = ['Pending', 'Packed', 'Cancelled', 'Returned'].includes(targetStatus);
+      const isStockDecrementedSource = ['Shipped', 'Delivered', 'Return Requested'].includes(currentStatus);
+
+      if (isStockRestoringTarget && isStockDecrementedSource) {
+        const { data: product } = await supabase
+          .from('products')
+          .select('stock')
+          .eq('product_id', productId)
+          .single();
+        
+        if (product) {
+          const newStock = product.stock + quantity;
+          await supabase
             .from('products')
-            .select('stock')
-            .eq('product_id', productId)
-            .single();
-          
-          if (product) {
-            const newStock = product.stock + quantity;
-            await supabase
-              .from('products')
-              .update({ stock: newStock })
-              .eq('product_id', productId);
-          }
+            .update({ stock: newStock })
+            .eq('product_id', productId);
         }
       }
 
@@ -306,6 +314,9 @@ export default function OrdersPage() {
                   if (order.status === 'Pending') badgeColor = 'border-amber-205 bg-amber-50 text-amber-700';
                   else if (order.status === 'Packed') badgeColor = 'border-blue-200 bg-blue-50 text-blue-700';
                   else if (order.status === 'Shipped') badgeColor = 'border-sky-200 bg-sky-50 text-sky-700';
+                  else if (order.status === 'Cancelled') badgeColor = 'border-rose-200 bg-rose-50 text-rose-700';
+                  else if (order.status === 'Return Requested') badgeColor = 'border-amber-200 bg-amber-50 text-amber-700';
+                  else if (order.status === 'Returned') badgeColor = 'border-amber-200 bg-amber-50 text-amber-700';
                   else badgeColor = 'border-emerald-200 bg-emerald-50 text-emerald-700';
 
                   return (
@@ -320,7 +331,14 @@ export default function OrdersPage() {
                         </div>
                       </td>
                       <td className="py-4 px-6 font-bold text-slate-800">
-                        {order.products?.name || <span className="text-slate-400 italic">Deleted Product</span>}
+                        <div>
+                          {order.products?.name || <span className="text-slate-400 italic">Deleted Product</span>}
+                          {(order.status === 'Return Requested' || order.status === 'Returned') && order.return_reason && (
+                            <div className="text-[10px] text-amber-600 font-bold mt-1">
+                              Reason: {order.return_reason}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="py-4 px-6 font-mono text-center font-bold">
                         {order.quantity}

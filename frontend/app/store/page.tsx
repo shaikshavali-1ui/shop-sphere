@@ -11,7 +11,7 @@ import {
   MapPin, Percent, ChevronDown, User, Sparkles, Shirt, 
   Smartphone, Heart, Monitor, Lamp, Tv, ToyBrick, 
   Carrot, Wrench, Trophy, BookOpen, Sofa, Tag, Plane,
-  Home, Share2, Send, ArrowLeft, Calendar, ShieldCheck
+  Home, Share2, Send, ArrowLeft, Calendar, ShieldCheck, RotateCcw
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -104,6 +104,11 @@ export default function Storefront() {
   const [isOrdersViewActive, setIsOrdersViewActive] = useState<boolean>(false);
   const [customerOrders, setCustomerOrders] = useState<any[]>([]);
   const [isOrdersLoading, setIsOrdersLoading] = useState<boolean>(false);
+
+  // Return states
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState<boolean>(false);
+  const [activeReturnOrderId, setActiveReturnOrderId] = useState<string | null>(null);
+  const [returnReason, setReturnReason] = useState<string>('Not good quality');
 
   // Location States
   const [locationInfo, setLocationInfo] = useState<{
@@ -229,11 +234,66 @@ export default function Storefront() {
     localStorage.setItem('shopsphere_cart', JSON.stringify(newCart));
   };
 
+  const reconcileCustomerSession = async (session: any) => {
+    if (!session || !session.user) return;
+    try {
+      const userId = session.user.id;
+      const userEmail = session.user.email;
+
+      // 1. Check if customer profile exists for this user ID
+      const { data: existingCust } = await supabase
+        .from('customers')
+        .select('customer_id')
+        .eq('customer_id', userId)
+        .maybeSingle();
+
+      if (!existingCust) {
+        console.log("Customer profile not found for user ID. Reconciling...");
+        // 2. Check if email already exists in customers (with different ID)
+        const { data: emailCust } = await supabase
+          .from('customers')
+          .select('customer_id')
+          .eq('email', userEmail)
+          .maybeSingle();
+
+        if (emailCust && emailCust.customer_id !== userId) {
+          console.log(`Reconciling email ${userEmail} by updating orders and profile from ${emailCust.customer_id} to ${userId}...`);
+          // Update any existing orders referencing the old customer_id to the new user ID
+          await supabase
+            .from('orders')
+            .update({ customer_id: userId })
+            .eq('customer_id', emailCust.customer_id);
+
+          // Delete the old customer profile
+          await supabase
+            .from('customers')
+            .delete()
+            .eq('customer_id', emailCust.customer_id);
+        }
+
+        // 3. Create the new customer profile
+        await supabase
+          .from('customers')
+          .insert({
+            customer_id: userId,
+            name: session.user.user_metadata?.name || userEmail.split('@')[0],
+            email: userEmail,
+            phone: '',
+            address: ''
+          });
+        console.log("Customer profile reconciled successfully.");
+      }
+    } catch (err) {
+      console.error("Failed to reconcile customer profile:", err);
+    }
+  };
+
   // Check customer session
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setCustomerSession(session);
+        reconcileCustomerSession(session);
       } else {
         const demoSession = localStorage.getItem('shopsphere_demo_session');
         if (demoSession) {
@@ -245,6 +305,7 @@ export default function Storefront() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         setCustomerSession(session);
+        reconcileCustomerSession(session);
       } else {
         const demoSession = localStorage.getItem('shopsphere_demo_session');
         if (demoSession) {
@@ -324,6 +385,51 @@ export default function Storefront() {
       setErrorMsg(err.message || 'Failed to load order history.');
     } finally {
       setIsOrdersLoading(false);
+    }
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (!confirm('Are you sure you want to cancel this order?')) return;
+    setIsOrdersLoading(true);
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'Cancelled' })
+        .eq('order_id', orderId);
+
+      if (error) throw error;
+      setSuccessMsg('Order cancelled successfully.');
+      setTimeout(() => setSuccessMsg(null), 3000);
+      await fetchCustomerOrders();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to cancel the order.');
+      setTimeout(() => setErrorMsg(null), 3000);
+    } finally {
+      setIsOrdersLoading(false);
+    }
+  };
+
+  const handleReturnOrder = async (orderId: string, reason: string) => {
+    setIsOrdersLoading(true);
+    try {
+      // 1. Update order status and return reason
+      const { error: updateErr } = await supabase
+        .from('orders')
+        .update({ status: 'Return Requested', return_reason: reason })
+        .eq('order_id', orderId);
+
+      if (updateErr) throw updateErr;
+
+      setSuccessMsg('Return requested successfully. The delivery agent will pick up the item shortly.');
+      setTimeout(() => setSuccessMsg(null), 3000);
+      await fetchCustomerOrders();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to request return.');
+      setTimeout(() => setErrorMsg(null), 3000);
+    } finally {
+      setIsOrdersLoading(false);
+      setIsReturnModalOpen(false);
+      setActiveReturnOrderId(null);
     }
   };
 
@@ -423,6 +529,8 @@ export default function Storefront() {
 
     if (cart.length === 0) return;
 
+    await reconcileCustomerSession(customerSession);
+
     setIsCheckoutLoading(true);
     setErrorMsg(null);
 
@@ -505,6 +613,8 @@ export default function Storefront() {
     }
 
     if (quantity <= 0) return;
+
+    await reconcileCustomerSession(customerSession);
 
     // Calculate dynamic pricing details
     const sellingPrice = Math.round(product.price * 100);
@@ -653,17 +763,7 @@ export default function Storefront() {
               </span>
             </Link>
 
-            {/* Custom Flipkart-Style Badges */}
-            <div className="hidden lg:flex items-center gap-2">
-              <div className="flex items-center gap-1 px-2.5 py-1 bg-amber-50 border border-amber-250/30 rounded-full text-amber-805 text-[9.5px] font-bold shadow-sm">
-                <Percent className="h-3 w-3 text-amber-600" />
-                <span>Deals</span>
-              </div>
-              <div className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 border border-blue-100 rounded-full text-blue-800 text-[9.5px] font-bold shadow-sm">
-                <Plane className="h-3 w-3 text-blue-600" />
-                <span>Express</span>
-              </div>
-            </div>
+
 
             {/* Location Selector */}
             <button 
@@ -1357,43 +1457,80 @@ export default function Storefront() {
                         {/* Status tracker visual progression */}
                         <div className="pt-4 space-y-2">
                           <div className="flex justify-between items-center text-[10px] font-extrabold tracking-wider uppercase text-slate-455">
-                            <span>Status: <span className={`normal-case font-black ${
+                             <span>Status: <span className={`normal-case font-black ${
                               order.status === 'Delivered' ? 'text-emerald-650' : 
                               order.status === 'Shipped' ? 'text-indigo-650' :
-                              order.status === 'Packed' ? 'text-blue-600' : 'text-amber-600'
+                              order.status === 'Packed' ? 'text-blue-600' : 
+                              order.status === 'Cancelled' ? 'text-rose-600' :
+                              order.status === 'Return Requested' ? 'text-amber-600' :
+                              order.status === 'Returned' ? 'text-amber-600' : 'text-amber-600'
                             }`}>{order.status || 'Pending'}</span></span>
                           </div>
                           
-                          {/* Visual progress bar */}
-                          <div className="relative">
-                            <div className="absolute top-1/2 left-0 right-0 h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
-                            <div 
-                              className={`absolute top-1/2 left-0 h-1 -translate-y-1/2 rounded-full transition-all duration-500 ${
-                                order.status === 'Delivered' ? 'bg-emerald-500' :
-                                order.status === 'Shipped' ? 'bg-indigo-500' :
-                                order.status === 'Packed' ? 'bg-blue-500' : 'bg-amber-500'
-                              }`}
-                              style={{ width: `${Math.max(0, (currentStatusIndex / (statusSteps.length - 1)) * 100)}%` }}
-                            />
-                            <div className="relative flex justify-between">
-                              {statusSteps.map((step, idx) => {
-                                const isPassed = idx <= currentStatusIndex;
-                                const isActive = idx === currentStatusIndex;
-                                return (
-                                  <div key={step} className="flex flex-col items-center">
-                                    <div className={`h-3 w-3 rounded-full border-2 flex items-center justify-center z-10 transition-colors ${
-                                      isActive ? 'bg-white border-blue-600 ring-2 ring-blue-100' :
-                                      isPassed ? 'bg-blue-600 border-blue-600' : 'bg-white border-slate-200'
-                                    }`} />
-                                    <span className={`text-[8.5px] mt-1 font-bold ${
-                                      isActive ? 'text-blue-600 font-extrabold' :
-                                      isPassed ? 'text-slate-700' : 'text-slate-400'
-                                    }`}>{step}</span>
-                                  </div>
-                                );
-                              })}
+                          {order.status === 'Cancelled' ? (
+                            <div className="pt-2">
+                              <div className="bg-rose-50 border border-rose-100 rounded-lg p-3 flex items-center gap-2 text-rose-700 text-xs font-bold animate-in fade-in duration-200">
+                                <X className="h-4 w-4 bg-rose-600 text-white p-0.5 rounded-full shrink-0" />
+                                <span>This order has been cancelled.</span>
+                              </div>
                             </div>
-                          </div>
+                          ) : order.status === 'Return Requested' ? (
+                            <div className="pt-2">
+                              <div className="bg-amber-50/40 border border-amber-100 rounded-lg p-3 flex flex-col gap-1 text-amber-800 text-xs font-bold animate-in fade-in duration-200">
+                                <div className="flex items-center gap-2">
+                                  <RotateCcw className="h-4 w-4 bg-amber-600 text-white p-0.5 rounded-full shrink-0" />
+                                  <span>Return Requested</span>
+                                </div>
+                                <span className="text-[10px] text-amber-600 ml-6 block font-medium">Our delivery agent will collect the product shortly.</span>
+                                {order.return_reason && (
+                                  <span className="text-[10px] text-amber-600 ml-6 block font-mono">Reason: "{order.return_reason}"</span>
+                                )}
+                              </div>
+                            </div>
+                          ) : order.status === 'Returned' ? (
+                            <div className="pt-2">
+                              <div className="bg-amber-50/40 border border-amber-100 rounded-lg p-3 flex flex-col gap-1 text-amber-800 text-xs font-bold animate-in fade-in duration-200">
+                                <div className="flex items-center gap-2">
+                                  <RotateCcw className="h-4 w-4 bg-amber-600 text-white p-0.5 rounded-full shrink-0" />
+                                  <span>This order has been returned.</span>
+                                </div>
+                                {order.return_reason && (
+                                  <span className="text-[10px] text-amber-600 ml-6 block font-mono">Reason: "{order.return_reason}"</span>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            /* Visual progress bar */
+                            <div className="relative">
+                              <div className="absolute top-1/2 left-0 right-0 h-1 bg-slate-100 -translate-y-1/2 rounded-full" />
+                              <div 
+                                className={`absolute top-1/2 left-0 h-1 -translate-y-1/2 rounded-full transition-all duration-500 ${
+                                  order.status === 'Delivered' ? 'bg-emerald-500' :
+                                  order.status === 'Shipped' ? 'bg-indigo-500' :
+                                  order.status === 'Packed' ? 'bg-blue-500' : 'bg-amber-500'
+                                }`}
+                                style={{ width: `${Math.max(0, (currentStatusIndex / (statusSteps.length - 1)) * 100)}%` }}
+                              />
+                              <div className="relative flex justify-between">
+                                {statusSteps.map((step, idx) => {
+                                  const isPassed = idx <= currentStatusIndex;
+                                  const isActive = idx === currentStatusIndex;
+                                  return (
+                                    <div key={step} className="flex flex-col items-center">
+                                      <div className={`h-3 w-3 rounded-full border-2 flex items-center justify-center z-10 transition-colors ${
+                                        isActive ? 'bg-white border-blue-600 ring-2 ring-blue-100' :
+                                        isPassed ? 'bg-blue-600 border-blue-600' : 'bg-white border-slate-200'
+                                      }`} />
+                                      <span className={`text-[8.5px] mt-1 font-bold ${
+                                        isActive ? 'text-blue-600 font-extrabold' :
+                                        isPassed ? 'text-slate-700' : 'text-slate-400'
+                                      }`}>{step}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
 
                       </div>
@@ -1404,14 +1541,45 @@ export default function Storefront() {
                       <span className="text-[10px] text-slate-400 font-semibold">
                         Need help with your order? <span className="text-blue-600 hover:underline cursor-pointer">Contact Support</span>
                       </span>
-                      <a 
-                        href={`/api/invoice/${order.order_id}`} 
-                        download={`invoice-${order.order_id.slice(0, 8)}.pdf`}
-                        className="py-1.5 px-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 rounded-lg text-[10.5px] font-extrabold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
-                      >
-                        <Check className="h-3.5 w-3.5 text-emerald-600" />
-                        <span>Download Invoice</span>
-                      </a>
+                      <div className="flex items-center gap-2">
+                        {(order.status === 'Pending' || order.status === 'Packed' || !order.status) && (
+                          <button
+                            onClick={() => handleCancelOrder(order.order_id)}
+                            className="py-1.5 px-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 hover:text-rose-800 rounded-lg text-[10.5px] font-extrabold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                          >
+                            <X className="h-3.5 w-3.5 text-rose-605" />
+                            <span>Cancel Order</span>
+                          </button>
+                        )}
+                        {(() => {
+                          if (order.status !== 'Delivered') return null;
+                          const orderTime = new Date(order.order_date).getTime();
+                          const diffDays = (new Date().getTime() - orderTime) / (1000 * 60 * 60 * 24);
+                          if (diffDays <= 7) {
+                            return (
+                              <button
+                                onClick={() => {
+                                  setActiveReturnOrderId(order.order_id);
+                                  setIsReturnModalOpen(true);
+                                }}
+                                className="py-1.5 px-3 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-700 hover:text-amber-800 rounded-lg text-[10.5px] font-extrabold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                              >
+                                <RotateCcw className="h-3.5 w-3.5 text-amber-600" />
+                                <span>Return Order</span>
+                              </button>
+                            );
+                          }
+                          return null;
+                        })()}
+                        <a 
+                          href={`/api/invoice/${order.order_id}`} 
+                          download={`invoice-${order.order_id.slice(0, 8)}.pdf`}
+                          className="py-1.5 px-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-900 rounded-lg text-[10.5px] font-extrabold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+                        >
+                          <Check className="h-3.5 w-3.5 text-emerald-600" />
+                          <span>Download Invoice</span>
+                        </a>
+                      </div>
                     </div>
                   </div>
                 );
@@ -2091,6 +2259,68 @@ export default function Storefront() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Return Order Options Modal */}
+      {isReturnModalOpen && activeReturnOrderId && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 text-left shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-lg font-black text-slate-805 tracking-tight mb-2">
+              Return Order
+            </h3>
+            <p className="text-slate-500 text-xs font-semibold mb-4 leading-relaxed">
+              Please select the reason why you want to return this product. Returns are only allowed within 7 days of delivery.
+            </p>
+
+            <div className="space-y-3 mb-6">
+              {[
+                "Not good quality",
+                "Not correct size",
+                "I don't like the product"
+              ].map((reason) => (
+                <label 
+                  key={reason} 
+                  className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer select-none transition-all ${
+                    returnReason === reason 
+                      ? 'border-amber-500 bg-amber-50/40 text-slate-900' 
+                      : 'border-slate-200 hover:bg-slate-50 text-slate-650'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="return_reason"
+                    value={reason}
+                    checked={returnReason === reason}
+                    onChange={(e) => setReturnReason(e.target.value)}
+                    className="h-4 w-4 text-amber-600 border-slate-300 focus:ring-amber-500 cursor-pointer"
+                  />
+                  <span className="text-xs font-bold">{reason}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsReturnModalOpen(false);
+                  setActiveReturnOrderId(null);
+                }}
+                className="py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleReturnOrder(activeReturnOrderId, returnReason)}
+                className="py-2 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+              >
+                <RotateCcw className="h-4 w-4" />
+                Submit Return
+              </button>
+            </div>
           </div>
         </div>
       )}

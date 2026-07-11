@@ -55,6 +55,17 @@ export default function UnifiedLogin() {
           // If session is immediately active (auto-confirm is enabled in Supabase)
           if (data.session) {
             if (role === 'customer') {
+              const { data: emailCust } = await supabase
+                .from('customers')
+                .select('customer_id')
+                .eq('email', email)
+                .maybeSingle();
+
+              if (emailCust && emailCust.customer_id !== data.session.user.id) {
+                await supabase.from('orders').update({ customer_id: data.session.user.id }).eq('customer_id', emailCust.customer_id);
+                await supabase.from('customers').delete().eq('customer_id', emailCust.customer_id);
+              }
+
               await supabase.from('customers').upsert({
                 customer_id: data.session.user.id,
                 name: name || email.split('@')[0],
@@ -95,6 +106,17 @@ export default function UnifiedLogin() {
               .maybeSingle();
 
             if (!existingCust) {
+              const { data: emailCust } = await supabase
+                .from('customers')
+                .select('customer_id')
+                .eq('email', data.session.user.email || email)
+                .maybeSingle();
+
+              if (emailCust && emailCust.customer_id !== data.session.user.id) {
+                await supabase.from('orders').update({ customer_id: data.session.user.id }).eq('customer_id', emailCust.customer_id);
+                await supabase.from('customers').delete().eq('customer_id', emailCust.customer_id);
+              }
+
               await supabase.from('customers').insert({
                 customer_id: data.session.user.id,
                 name: data.session.user.user_metadata?.name || email.split('@')[0],
