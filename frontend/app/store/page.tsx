@@ -84,6 +84,69 @@ const CATEGORY_IMAGES: Record<string, string[]> = {
   ]
 };
 
+const MOCK_PRODUCTS: Product[] = [
+  {
+    product_id: 'demo-prod-1',
+    name: 'Wireless Gaming Mouse',
+    price: 59.99,
+    category: 'Electronics',
+    stock: 15,
+    status: 'Active',
+    image_url: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80',
+    created_at: new Date().toISOString()
+  },
+  {
+    product_id: 'demo-prod-2',
+    name: 'Mechanical Keyboard Pro',
+    price: 129.99,
+    category: 'Electronics',
+    stock: 8,
+    status: 'Active',
+    image_url: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80',
+    created_at: new Date().toISOString()
+  },
+  {
+    product_id: 'demo-prod-3',
+    name: 'Ergonomic Office Chair',
+    price: 249.99,
+    category: 'Furniture',
+    stock: 4,
+    status: 'Active',
+    image_url: 'https://images.unsplash.com/photo-1505797149-43b0069ec26b?auto=format&fit=crop&w=600&q=80',
+    created_at: new Date().toISOString()
+  },
+  {
+    product_id: 'demo-prod-4',
+    name: 'Noise Cancelling Headphones',
+    price: 199.99,
+    category: 'Electronics',
+    stock: 12,
+    status: 'Active',
+    image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80',
+    created_at: new Date().toISOString()
+  },
+  {
+    product_id: 'demo-prod-5',
+    name: 'Minimalist Leather Backpack',
+    price: 89.99,
+    category: 'Fashion',
+    stock: 20,
+    status: 'Active',
+    image_url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80',
+    created_at: new Date().toISOString()
+  },
+  {
+    product_id: 'demo-prod-6',
+    name: 'Bright Bubbles Maker #10',
+    price: 24.99,
+    category: 'Toys, Kids',
+    stock: 15,
+    status: 'Active',
+    image_url: 'https://images.unsplash.com/photo-1515488042361-404e9250afef?auto=format&fit=crop&w=600&q=80',
+    created_at: new Date().toISOString()
+  }
+];
+
 export default function Storefront() {
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
@@ -347,6 +410,15 @@ export default function Storefront() {
       setProducts(data || []);
     } catch (err) {
       console.error('Error fetching storefront products:', err);
+      // Fallback to beautiful mock products on database/connection failure so user never gets a blank catalog
+      let filtered = [...MOCK_PRODUCTS];
+      if (selectedCategory) {
+        filtered = filtered.filter(p => p.category.toLowerCase().includes(selectedCategory.split(',')[0].trim().toLowerCase()));
+      }
+      if (debouncedSearch) {
+        filtered = filtered.filter(p => p.name.toLowerCase().includes(debouncedSearch.toLowerCase()));
+      }
+      setProducts(filtered);
     } finally {
       setLoading(false);
     }
