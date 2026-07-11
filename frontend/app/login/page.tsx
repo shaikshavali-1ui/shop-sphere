@@ -28,6 +28,22 @@ export default function UnifiedLogin() {
     }
   }, []);
 
+  const isConnectionError = (err: any) => {
+    if (!err) return false;
+    const msg = (err.message || String(err)).toLowerCase();
+    return (
+      msg.includes('fetch') || 
+      msg.includes('network') || 
+      msg.includes('failed') || 
+      msg.includes('connection') || 
+      msg.includes('dns') ||
+      msg.includes('refused') ||
+      msg.includes('load') ||
+      err.status === 0 ||
+      err instanceof TypeError
+    );
+  };
+
   const triggerDemoSession = async (targetEmail: string, targetRole: 'admin' | 'customer') => {
     const dummyUser = {
       id: targetRole === 'admin' ? '00000000-0000-0000-0000-000000000001' : '00000000-0000-0000-0000-000000000002',
@@ -42,14 +58,16 @@ export default function UnifiedLogin() {
     };
     localStorage.setItem('shopsphere_demo_session', JSON.stringify(dummySession));
     
-    document.cookie = `sb-access-token=demo-token; path=/; max-age=3600; SameSite=Lax; Secure`;
-    document.cookie = `sb-refresh-token=demo-refresh-token; path=/; max-age=604800; SameSite=Lax; Secure`;
+    const secureFlag = typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `sb-access-token=demo-token; path=/; max-age=3600; SameSite=Lax${secureFlag}`;
+    document.cookie = `sb-refresh-token=demo-refresh-token; path=/; max-age=604800; SameSite=Lax${secureFlag}`;
 
     if (targetRole === 'admin') {
       router.push('/');
     } else {
       try {
-        await supabase.from('customers').upsert({
+        // Fire-and-forget the database upsert so we don't block/delay navigation when offline
+        supabase.from('customers').upsert({
           customer_id: dummyUser.id,
           name: dummyUser.user_metadata.name,
           email: targetEmail,
@@ -84,7 +102,7 @@ export default function UnifiedLogin() {
         });
 
         if (error) {
-          if (error.message?.toLowerCase().includes('fetch') || error.message?.toLowerCase().includes('network')) {
+          if (isConnectionError(error)) {
             triggerDemoSession(email || (role === 'admin' ? 'admin@shopsphere.com' : 'customer@example.com'), role);
             return;
           }
@@ -130,7 +148,7 @@ export default function UnifiedLogin() {
         });
 
         if (error) {
-          if (error.message?.toLowerCase().includes('fetch') || error.message?.toLowerCase().includes('network')) {
+          if (isConnectionError(error)) {
             triggerDemoSession(email || (role === 'admin' ? 'admin@shopsphere.com' : 'customer@example.com'), role);
             return;
           }
@@ -175,7 +193,7 @@ export default function UnifiedLogin() {
         }
       }
     } catch (err: any) {
-      if (err.message?.toLowerCase().includes('fetch') || err.message?.toLowerCase().includes('network')) {
+      if (isConnectionError(err)) {
         triggerDemoSession(email || (role === 'admin' ? 'admin@shopsphere.com' : 'customer@example.com'), role);
         return;
       }

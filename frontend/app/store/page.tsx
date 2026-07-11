@@ -358,6 +358,47 @@ export default function Storefront() {
 
   const fetchCustomerOrders = async () => {
     if (!customerSession) return;
+
+    if (customerSession.access_token === 'demo-token') {
+      setIsOrdersLoading(true);
+      setTimeout(() => {
+        if (customerOrders.length === 0) {
+          setCustomerOrders([
+            {
+              order_id: 'demo-order-1',
+              order_date: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+              quantity: 2,
+              status: 'Delivered',
+              total_amount: 119.98,
+              product_id: 'demo-prod-1',
+              products: {
+                name: 'Wireless Gaming Mouse',
+                image_url: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80',
+                price: 59.99,
+                category: 'Electronics'
+              }
+            },
+            {
+              order_id: 'demo-order-2',
+              order_date: new Date().toISOString(),
+              quantity: 1,
+              status: 'Pending',
+              total_amount: 129.99,
+              product_id: 'demo-prod-2',
+              products: {
+                name: 'Mechanical Keyboard Pro',
+                image_url: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&q=80',
+                price: 129.99,
+                category: 'Electronics'
+              }
+            }
+          ]);
+        }
+        setIsOrdersLoading(false);
+      }, 400);
+      return;
+    }
+
     setIsOrdersLoading(true);
     try {
       const { data, error } = await supabase
@@ -390,6 +431,20 @@ export default function Storefront() {
 
   const handleCancelOrder = async (orderId: string) => {
     if (!confirm('Are you sure you want to cancel this order?')) return;
+
+    if (customerSession?.access_token === 'demo-token') {
+      setIsOrdersLoading(true);
+      setTimeout(() => {
+        setCustomerOrders(prevOrders => 
+          prevOrders.map(o => o.order_id === orderId ? { ...o, status: 'Cancelled' } : o)
+        );
+        setSuccessMsg('Order cancelled successfully (Demo Mode).');
+        setIsOrdersLoading(false);
+        setTimeout(() => setSuccessMsg(null), 3000);
+      }, 500);
+      return;
+    }
+
     setIsOrdersLoading(true);
     try {
       const { error } = await supabase
@@ -410,6 +465,21 @@ export default function Storefront() {
   };
 
   const handleReturnOrder = async (orderId: string, reason: string) => {
+    if (customerSession?.access_token === 'demo-token') {
+      setIsOrdersLoading(true);
+      setTimeout(() => {
+        setCustomerOrders(prevOrders => 
+          prevOrders.map(o => o.order_id === orderId ? { ...o, status: 'Return Requested', return_reason: reason } : o)
+        );
+        setSuccessMsg('Return requested successfully (Demo Mode). The delivery agent will pick up the item shortly.');
+        setIsOrdersLoading(false);
+        setIsReturnModalOpen(false);
+        setActiveReturnOrderId(null);
+        setTimeout(() => setSuccessMsg(null), 3000);
+      }, 500);
+      return;
+    }
+
     setIsOrdersLoading(true);
     try {
       // 1. Update order status and return reason
@@ -529,6 +599,53 @@ export default function Storefront() {
 
     if (cart.length === 0) return;
 
+    if (customerSession?.access_token === 'demo-token') {
+      setIsCheckoutLoading(true);
+      setErrorMsg(null);
+      setTimeout(() => {
+        // 1. Decrement product stocks locally
+        setProducts(prevProducts => 
+          prevProducts.map(p => {
+            const cartItem = cart.find(item => item.product.product_id === p.product_id);
+            if (cartItem) {
+              const newStock = Math.max(0, p.stock - cartItem.quantity);
+              return {
+                ...p,
+                stock: newStock,
+                status: newStock === 0 ? 'Out of Stock' : p.status
+              };
+            }
+            return p;
+          })
+        );
+
+        // 2. Prepend new orders to order history state
+        const newOrders = cart.map((item, index) => ({
+          order_id: `demo-order-${Date.now()}-${index}`,
+          order_date: new Date().toISOString(),
+          quantity: item.quantity,
+          status: 'Pending' as const,
+          total_amount: item.product.price * item.quantity,
+          product_id: item.product.product_id,
+          products: {
+            name: item.product.name,
+            image_url: item.product.image_url,
+            price: item.product.price,
+            category: item.product.category
+          }
+        }));
+        setCustomerOrders(prevOrders => [...newOrders, ...prevOrders]);
+
+        setSuccessMsg('Thank you! Your order has been placed successfully (Demo Mode).');
+        saveCart([]);
+        setIsCartOpen(false);
+        setIsCheckoutLoading(false);
+        window.scrollTo(0, 0);
+        setTimeout(() => setSuccessMsg(null), 5000);
+      }, 800);
+      return;
+    }
+
     await reconcileCustomerSession(customerSession);
 
     setIsCheckoutLoading(true);
@@ -613,6 +730,54 @@ export default function Storefront() {
     }
 
     if (quantity <= 0) return;
+
+    if (customerSession?.access_token === 'demo-token') {
+      setIsCheckoutLoading(true);
+      setErrorMsg(null);
+      setTimeout(() => {
+        // 1. Decrement product stock locally
+        setProducts(prevProducts => 
+          prevProducts.map(p => {
+            if (p.product_id === product.product_id) {
+              const newStock = Math.max(0, p.stock - quantity);
+              return {
+                ...p,
+                stock: newStock,
+                status: newStock === 0 ? 'Out of Stock' : p.status
+              };
+            }
+            return p;
+          })
+        );
+
+        // 2. Prepend new order to order history state
+        const finalDB = (product.price * quantity) + 0.09 + (paymentMethod === 'cod' ? 0.06 : 0) - (applyGiftCard ? Math.min((product.price * quantity) + 0.09, 0.54) : 0);
+        const newOrder = {
+          order_id: `demo-order-${Date.now()}`,
+          order_date: new Date().toISOString(),
+          quantity: quantity,
+          status: 'Pending' as const,
+          total_amount: parseFloat(finalDB.toFixed(2)),
+          product_id: product.product_id,
+          products: {
+            name: product.name,
+            image_url: product.image_url,
+            price: product.price,
+            category: product.category
+          }
+        };
+        setCustomerOrders(prevOrders => [newOrder, ...prevOrders]);
+
+        setSuccessMsg(`Thank you! Your order for "${product.name}" has been placed successfully via ${paymentMethod.toUpperCase()} (Demo Mode). A confirmation email has been sent to ${customerSession.user.email}.`);
+        setCheckoutProduct(null);
+        setCheckoutStep('details');
+        setUseGiftCard(false);
+        setIsCheckoutLoading(false);
+        window.scrollTo(0, 0);
+        setTimeout(() => setSuccessMsg(null), 6000);
+      }, 800);
+      return;
+    }
 
     await reconcileCustomerSession(customerSession);
 
@@ -1542,7 +1707,7 @@ export default function Storefront() {
                         Need help with your order? <span className="text-blue-600 hover:underline cursor-pointer">Contact Support</span>
                       </span>
                       <div className="flex items-center gap-2">
-                        {(order.status === 'Pending' || order.status === 'Packed' || !order.status) && (
+                        {(order.status === 'Pending' || order.status === 'Packed' || order.status === 'Shipped' || !order.status) && (
                           <button
                             onClick={() => handleCancelOrder(order.order_id)}
                             className="py-1.5 px-3 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 hover:text-rose-800 rounded-lg text-[10.5px] font-extrabold transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"

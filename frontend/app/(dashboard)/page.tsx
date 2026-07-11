@@ -9,13 +9,25 @@ export default function RootRouter() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) {
+      let activeSession = session;
+      if (!activeSession) {
+        const demoSession = localStorage.getItem('shopsphere_demo_session');
+        if (demoSession) {
+          try {
+            activeSession = JSON.parse(demoSession);
+          } catch (e) {
+            console.error("Failed to parse demo session", e);
+          }
+        }
+      }
+
+      if (!activeSession) {
         // Guest user -> Redirect to unified login portal
         router.push('/login');
       } else {
         // Authenticated user -> Check their role traits
-        const email = session.user.email || '';
-        const userRole = session.user.user_metadata?.role || 'customer';
+        const email = activeSession.user.email || '';
+        const userRole = activeSession.user.user_metadata?.role || 'customer';
         
         // Admin if metadata role is 'admin' or email matches admin patterns
         const isAdmin = userRole === 'admin' || 
