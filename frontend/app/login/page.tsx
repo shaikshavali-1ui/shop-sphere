@@ -46,7 +46,9 @@ export default function UnifiedLogin() {
 
   const triggerDemoSession = async (targetEmail: string, targetRole: 'admin' | 'customer') => {
     const dummyUser = {
-      id: targetRole === 'admin' ? '00000000-0000-0000-0000-000000000001' : `demo-cust-${Date.now()}`,
+      id: targetRole === 'admin' 
+        ? '00000000-0000-0000-0000-000000000001' 
+        : `demo-cust-${targetEmail.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
       email: targetEmail,
       user_metadata: { role: targetRole, name: targetRole === 'admin' ? 'Demo Admin' : targetEmail.split('@')[0] }
     };
@@ -83,7 +85,7 @@ export default function UnifiedLogin() {
     }
 
     if (targetRole === 'admin') {
-      router.push('/');
+      router.push('/dashboard');
     } else {
       try {
         // Fire-and-forget the database upsert so we don't block/delay navigation when offline
@@ -151,7 +153,7 @@ export default function UnifiedLogin() {
               });
               router.push('/store');
             } else {
-              router.push('/');
+              router.push('/dashboard');
             }
             router.refresh();
           } else {
@@ -207,7 +209,7 @@ export default function UnifiedLogin() {
             }
             router.push('/store');
           } else {
-            router.push('/');
+            router.push('/dashboard');
           }
           router.refresh();
         }

@@ -13,7 +13,7 @@ export default function RootRouter() {
 
     const handleRedirect = (activeSession: any) => {
       if (!activeSession) {
-        router.push('/login');
+        router.push('/store');
       } else {
         const email = activeSession.user.email || '';
         const userRole = activeSession.user.user_metadata?.role || 'customer';

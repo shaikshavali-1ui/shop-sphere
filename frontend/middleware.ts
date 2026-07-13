@@ -8,11 +8,12 @@ export async function middleware(request: NextRequest) {
   const isLoginPage = path === '/login';
   const isStorePage = path.startsWith('/store');
   const isStoreLoginPage = path === '/store/login';
+  const isRootPage = path === '/';
 
   // If no auth token is present
   if (!token) {
-    // Redirect all requests except admin login, store listing, and store login to admin login
-    if (!isLoginPage && !isStorePage && !isStoreLoginPage) {
+    // Redirect all requests except admin login, store listing, store login, and root page to admin login
+    if (!isLoginPage && !isStorePage && !isStoreLoginPage && !isRootPage) {
       return NextResponse.redirect(new URL('/login', request.url));
     }
     return NextResponse.next();
